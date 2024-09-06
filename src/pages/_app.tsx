@@ -1,5 +1,6 @@
 import { FrameMetadata } from '@coinbase/onchainkit/frame';
 import { type AppType } from "next/app";
+import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { type Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
@@ -8,27 +9,22 @@ import { PostHogProvider } from "posthog-js/react";
 
 import Layout from "~/components/utils/Layout";
 import { APP_DESCRIPTION, APP_NAME, APP_URL } from "~/constants";
-import { env } from "~/env";
-import OnchainProviders from "~/providers/OnchainProviders";
 import { api } from "~/utils/api";
 
 import '@coinbase/onchainkit/styles.css';
 import "~/styles/globals.css";
 
-if (typeof window !== 'undefined' && env.NEXT_PUBLIC_POSTHOG_KEY) {
-  posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
-    api_host: env.NEXT_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
-    person_profiles: 'always',
-    loaded: (posthog) => {
-      if (process.env.NODE_ENV === 'development') posthog.debug() // debug mode in development
-    },
-  })
-}
-
 const pageTitle = `Play ${APP_NAME}`;
 const pageDescription = APP_DESCRIPTION;
 const pageUrl = APP_URL;
 const imageUrl = `${APP_URL}/images/og.gif`;
+
+const OnchainProviders = dynamic(
+  () => import('~/providers/OnchainProviders'),
+  {
+    ssr: false,
+  },
+);
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
@@ -56,7 +52,7 @@ const MyApp: AppType<{ session: Session | null }> = ({
           buttons={[
             {
               action: 'link',
-              label: '🐍 Play Snake',
+              label: pageTitle,
               target: pageUrl,
             },
           ]}

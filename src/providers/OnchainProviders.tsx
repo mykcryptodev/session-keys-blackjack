@@ -14,6 +14,7 @@ import { type FC, useEffect, useState } from 'react';
 import { createConfig, http,WagmiProvider } from 'wagmi';
 
 import { APP_NAME, DEFAULT_CHAIN, EAS_SCHEMA_ID, SUPPORTED_CHAINS } from '~/constants';
+import { PermissionsProvider } from '~/contexts/PermissionsContext';
 import { env } from '~/env';
 
 import '@coinbase/onchainkit/styles.css';
@@ -61,6 +62,7 @@ type Props = {
 }
 
 const OnchainProviders: FC<Props> = ({ children }) => {
+
   const [isMounted, setIsMounted] = useState<boolean>(false);
   useEffect(() => {
     setIsMounted(true);
@@ -78,7 +80,9 @@ const OnchainProviders: FC<Props> = ({ children }) => {
           schemaId={EAS_SCHEMA_ID}
         >
           <RainbowKitProvider modalSize="compact">
-            {children}
+            <PermissionsProvider>
+              {children}
+            </PermissionsProvider>
           </RainbowKitProvider>
         </OnchainKitProvider>
       </QueryClientProvider>
