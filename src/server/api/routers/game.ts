@@ -296,6 +296,20 @@ export const gameRouter = createTRPCRouter({
         throw new Error("Player already placed a bet");
       }
 
+      // user must have enough balance
+      const user = await ctx.db.user.findUnique({
+        where: {
+          id: ctx.session.user.id,
+        },
+      });
+      console.log({ userChips: user?.chips })
+      if (!user) {
+        throw new Error("User not found");
+      }
+      if (user.chips < input.bet) {
+        throw new Error("Insufficient balance");
+      }
+
       // Create the bet
       const bet = await ctx.db.bet.create({
         data: {
@@ -881,6 +895,65 @@ export const gameRouter = createTRPCRouter({
           status: updatedStatus,
         },
       });
+
+      // find all players who won and increment their chips based on their bet
+      const winningPlayers = round.hands.filter((hand) => hand.status !== "busted" && hand.playerId !== dealerPlayer.id);
+      await Promise.all(winningPlayers.map(async (hand) => {
+        const player = await ctx.db.player.findUnique({
+          where: {
+            id: hand.playerId,
+          },
+        });
+        if (!player) {
+          throw new Error("Player not found");
+        }
+        const bet = round.bets.find((bet) => bet.playerId === player.id);
+        if (!bet) {
+          throw new Error("Bet not found");
+        }
+        const winnings = bet.amount * 2;
+        // update the user's chips
+        await ctx.db.user.update({
+          where: {
+            id: player.userId,
+          },
+          data: {
+            chips: {
+              increment: winnings,
+            },
+          },
+        });
+        
+      }));
+
+      // find all players who pushed and return their bet
+      const pushingPlayers = round.hands.filter((hand) => hand.status !== "busted" && hand.playerId !== dealerPlayer.id);
+      await Promise.all(pushingPlayers.map(async (hand) => {
+        const player = await ctx.db.player.findUnique({
+          where: {
+            id: hand.playerId,
+          },
+        });
+        if (!player) {
+          throw new Error("Player not found");
+        }
+        const bet = round.bets.find((bet) => bet.playerId === player.id);
+        if (!bet) {
+          throw new Error("Bet not found");
+        }
+        // update the user's chips
+        await ctx.db.user.update({
+          where: {
+            id: player.userId,
+          },
+          data: {
+            chips: {
+              increment: bet.amount,
+            },
+          },
+        });
+      }));
+
       ee.emit(`updateGame`, input.id);
       return updatedHand;
     }),
@@ -1004,6 +1077,23 @@ export const gameRouter = createTRPCRouter({
   getDefaultCardFids: publicProcedure
     .query(async () => {
       return getDefaultCardFids();
+    }),
+  buyChips: protectedProcedure
+    .input(z.object({
+      amount: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const updatedUser = await ctx.db.user.update({
+        where: {
+          id: ctx.session.user.id,
+        },
+        data: {
+          chips: {
+            increment: input.amount,
+          },
+        },
+      });
+      return updatedUser;
     }),
 });
 

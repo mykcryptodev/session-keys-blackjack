@@ -57,6 +57,7 @@ model User {
     gamesPlayed Player[]
 
     isDealer Boolean @default(false)
+    chips    Int     @default(0)
 }
 
 model VerificationToken {

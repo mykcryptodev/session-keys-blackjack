@@ -14,7 +14,6 @@ import { type FC, useEffect, useState } from 'react';
 import { createConfig, http,WagmiProvider } from 'wagmi';
 
 import { APP_NAME, DEFAULT_CHAIN, EAS_SCHEMA_ID, SUPPORTED_CHAINS } from '~/constants';
-import { PermissionsProvider } from '~/contexts/PermissionsContext';
 import { env } from '~/env';
 
 import '@coinbase/onchainkit/styles.css';
@@ -80,9 +79,7 @@ const OnchainProviders: FC<Props> = ({ children }) => {
           schemaId={EAS_SCHEMA_ID}
         >
           <RainbowKitProvider modalSize="compact">
-            <PermissionsProvider>
-              {children}
-            </PermissionsProvider>
+            {children}
           </RainbowKitProvider>
         </OnchainKitProvider>
       </QueryClientProvider>
