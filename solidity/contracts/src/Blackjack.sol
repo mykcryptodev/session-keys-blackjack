@@ -18,8 +18,8 @@ contract Blackjack {
         uint8 currentPlayerIndex;
     }
 
-    uint256 public constant MIN_BET = 0.01 ether;
-    uint256 public constant MAX_BET = 1 ether;
+    uint256 public constant MIN_BET = 0.0000001 ether;
+    uint256 public constant MAX_BET = 2 ether;
     uint256 public constant ACTION_TIMEOUT = 5 minutes;
     uint8 public constant MAX_PLAYERS = 6;
 
@@ -44,33 +44,33 @@ contract Blackjack {
     error NotCurrentPlayerTurn();
     error AllPlayersHaveActed();
     error MaxPlayersReached();
+    error NotAllPlayersHaveActed();
+    error DealerHasNotPlayed();
 
     function joinGame() external payable {
         if (currentGame.isActive) revert GameInProgress();
         if (msg.value < MIN_BET || msg.value > MAX_BET) revert BetOutOfRange();
         if (currentGame.players.length >= MAX_PLAYERS) revert MaxPlayersReached();
 
-        if (currentGame.players.length == 0) {
+        if (currentGame.players.length == MAX_PLAYERS) {
             currentGame.isActive = true;
             emit GameStarted(nonce);
+            startDealing();
         }
 
-        currentGame.players.push(Player({
-            addr: msg.sender,
-            bet: msg.value,
-            hand: new uint8[](0),
-            isStanding: false,
-            hasBusted: false
-        }));
+        currentGame.players.push(
+            Player({addr: msg.sender, bet: msg.value, hand: new uint8[](0), isStanding: false, hasBusted: false})
+        );
 
         emit PlayerJoined(msg.sender, msg.value);
     }
 
-    function startDealing() external {
-        if (!currentGame.isActive) revert NoActiveGame();
+    function startDealing() public {
+        if (currentGame.isActive) revert CardsAlreadyDealt();
         if (currentGame.players.length == 0) revert NoPlayersInGame();
         if (currentGame.dealerHand.length != 0) revert CardsAlreadyDealt();
 
+        currentGame.isActive = true;
         dealCards();
         currentGame.lastActionTimestamp = block.timestamp;
         emit CardsDealt();
@@ -78,7 +78,7 @@ contract Blackjack {
 
     function hit() external {
         if (!canPlayerAct(msg.sender)) revert NotPlayerTurn();
-        
+
         uint8 card = drawCard();
         Player storage player = currentGame.players[currentGame.currentPlayerIndex];
         player.hand.push(card);
@@ -94,10 +94,10 @@ contract Blackjack {
 
     function stand() external {
         if (!canPlayerAct(msg.sender)) revert NotPlayerTurn();
-        
+
         Player storage player = currentGame.players[currentGame.currentPlayerIndex];
         player.isStanding = true;
-        
+
         emit PlayerAction(msg.sender, "stand");
         nextPlayer();
     }
@@ -129,6 +129,15 @@ contract Blackjack {
         // In a real implementation, use a more secure method like Chainlink VRF.
         nonce++;
         return uint8((uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 13) + 1);
+    }
+
+    // New function to initiate dealer play and game settlement
+    function playDealerAndSettleGame() external {
+        if (!currentGame.isActive) revert NoActiveGame();
+        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
+
+        _playDealer();
+        _settleGame();
     }
 
     function calculateHandValue(uint8[] memory hand) private pure returns (uint8) {
@@ -164,15 +173,28 @@ contract Blackjack {
 
     function nextPlayer() private {
         currentGame.currentPlayerIndex++;
-        if (currentGame.currentPlayerIndex >= currentGame.players.length) {
-            playDealer();
-            settleGame();
-        } else {
-            currentGame.lastActionTimestamp = block.timestamp;
-        }
+        currentGame.lastActionTimestamp = block.timestamp;
     }
 
-    function playDealer() private {
+    // New function to only play the dealer's hand
+    function playDealer() external {
+        if (!currentGame.isActive) revert NoActiveGame();
+        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
+
+        _playDealer();
+    }
+
+    // New function to only settle the game
+    function settleGame() external {
+        if (!currentGame.isActive) revert NoActiveGame();
+        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
+        if (currentGame.dealerHand.length < 2) revert DealerHasNotPlayed();
+
+        _settleGame();
+    }
+
+    // Rename the existing private playDealer function to _playDealer
+    function _playDealer() private {
         // Deal the second card to the dealer
         uint8 secondCard = drawCard();
         currentGame.dealerHand.push(secondCard);
@@ -188,7 +210,8 @@ contract Blackjack {
         emit DealerAction("stand", 0);
     }
 
-    function settleGame() private {
+    // Rename the existing private settleGame function to _settleGame
+    function _settleGame() private {
         uint8 dealerValue = calculateHandValue(currentGame.dealerHand);
         address[] memory winners = new address[](currentGame.players.length);
         uint256[] memory winnings = new uint256[](currentGame.players.length);
@@ -202,9 +225,11 @@ contract Blackjack {
                 winners[winnerCount] = player.addr;
                 winnings[winnerCount] = player.bet * 2;
                 winnerCount++;
-                payable(player.addr).transfer(player.bet * 2);
+                (bool success, ) = player.addr.call{value: player.bet * 2}("");
+                require(success, "Transfer failed");
             } else if (!player.hasBusted && playerValue == dealerValue) {
-                payable(player.addr).transfer(player.bet);
+                (bool success, ) = player.addr.call{value: player.bet}("");
+                require(success, "Transfer failed");
             }
         }
 
@@ -218,7 +243,7 @@ contract Blackjack {
 
     function getWinners() public view returns (address[] memory, uint256[] memory) {
         require(!currentGame.isActive, "Game is still in progress");
-        
+
         address[] memory winners = new address[](currentGame.players.length);
         uint256[] memory winnings = new uint256[](currentGame.players.length);
         uint256 winnerCount = 0;
@@ -244,7 +269,61 @@ contract Blackjack {
         return (winners, winnings);
     }
 
-    function resetGameForTesting() public {
-        delete currentGame;
+    function getGameState()
+        public
+        view
+        returns (
+            address[] memory playerAddresses,
+            uint256[] memory playerBets,
+            uint8[][] memory playerHands,
+            bool[] memory playerIsStanding,
+            bool[] memory playerHasBusted,
+            uint8[] memory dealerHand,
+            uint256 lastActionTimestamp,
+            bool isActive,
+            uint8 currentPlayerIndex
+        )
+    {
+        uint256 playerCount = currentGame.players.length;
+        playerAddresses = new address[](playerCount);
+        playerBets = new uint256[](playerCount);
+        playerHands = new uint8[][](playerCount);
+        playerIsStanding = new bool[](playerCount);
+        playerHasBusted = new bool[](playerCount);
+
+        for (uint256 i = 0; i < playerCount; i++) {
+            Player memory player = currentGame.players[i];
+            playerAddresses[i] = player.addr;
+            playerBets[i] = player.bet;
+            playerHands[i] = player.hand;
+            playerIsStanding[i] = player.isStanding;
+            playerHasBusted[i] = player.hasBusted;
+        }
+
+        return (
+            playerAddresses,
+            playerBets,
+            playerHands,
+            playerIsStanding,
+            playerHasBusted,
+            currentGame.dealerHand,
+            currentGame.lastActionTimestamp,
+            currentGame.isActive,
+            currentGame.currentPlayerIndex
+        );
+    }
+
+    function getPlayerState(
+        uint256 playerIndex
+    )
+        public
+        view
+        returns (address playerAddress, uint256 playerBet, uint8[] memory playerHand, bool isStanding, bool hasBusted)
+    {
+        require(playerIndex < currentGame.players.length, "Invalid player index");
+
+        Player memory player = currentGame.players[playerIndex];
+
+        return (player.addr, player.bet, player.hand, player.isStanding, player.hasBusted);
     }
 }
