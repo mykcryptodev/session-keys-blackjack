@@ -203,8 +203,21 @@ contract BlackJackTest is Test {
         vm.prank(player3);
         blackjack.stand();
 
-        // Call playDealerAndSettleGame after all players have acted
-        blackjack.playDealerAndSettleGame();
+        // call playDealer
+        blackjack.playDealer();
+
+        // Manipulate dealer's hand to have a specific value
+        bytes32 dealerSlot = keccak256(abi.encode(uint256(2), uint256(4))); // slot for dealerHand
+        vm.store(address(blackjack), dealerSlot, bytes32(uint256(2))); // Set length to 2
+        vm.store(address(blackjack), keccak256(abi.encode(dealerSlot, uint256(0))), bytes32(uint256(10))); // dealer card 1
+        vm.store(address(blackjack), keccak256(abi.encode(dealerSlot, uint256(1))), bytes32(uint256(7))); // dealer card 2
+
+        // Set that the dealer has played
+        bytes32 dealerPlayedSlot = keccak256(abi.encode(uint256(7))); // slot for dealerPlayed
+        vm.store(address(blackjack), dealerPlayedSlot, bytes32(uint256(1))); // Set to true
+
+        // call settleGame game
+        blackjack.settleGame();
 
         // Check winners
         (address[] memory winners, uint256[] memory winnings) = blackjack.getWinners();

