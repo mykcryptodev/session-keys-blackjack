@@ -2,17 +2,30 @@
 pragma solidity ^0.8.0;
 
 contract Blackjack {
+    // New enum for card suits
+    enum Suit {
+        Hearts,
+        Diamonds,
+        Clubs,
+        Spades
+    }
+
+    struct Card {
+        uint8 value;
+        Suit suit;
+    }
+
     struct Player {
         address addr;
         uint256 bet;
-        uint8[] hand;
+        Card[] hand;
         bool isStanding;
         bool hasBusted;
     }
 
     struct Game {
         Player[] players;
-        uint8[] dealerHand;
+        Card[] dealerHand;
         uint256 lastActionTimestamp;
         bool isActive;
         uint8 currentPlayerIndex;
@@ -59,7 +72,7 @@ contract Blackjack {
         }
 
         currentGame.players.push(
-            Player({addr: msg.sender, bet: msg.value, hand: new uint8[](0), isStanding: false, hasBusted: false})
+            Player({addr: msg.sender, bet: msg.value, hand: new Card[](0), isStanding: false, hasBusted: false})
         );
 
         emit PlayerJoined(msg.sender, msg.value);
@@ -79,7 +92,7 @@ contract Blackjack {
     function hit() external {
         if (!canPlayerAct(msg.sender)) revert NotPlayerTurn();
 
-        uint8 card = drawCard();
+        Card memory card = drawCard();
         Player storage player = currentGame.players[currentGame.currentPlayerIndex];
         player.hand.push(card);
 
@@ -124,11 +137,12 @@ contract Blackjack {
         currentGame.dealerHand.push(drawCard());
     }
 
-    function drawCard() private returns (uint8) {
-        // This is a simplified random number generation.
-        // In a real implementation, use a more secure method like Chainlink VRF.
+    function drawCard() private returns (Card memory) {
         nonce++;
-        return uint8((uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce))) % 13) + 1);
+        uint256 randomNumber = uint256(keccak256(abi.encodePacked(block.timestamp, msg.sender, nonce)));
+        uint8 value = uint8((randomNumber % 13) + 1);
+        Suit suit = Suit(randomNumber % 4);
+        return Card(value, suit);
     }
 
     // New function to initiate dealer play and game settlement
@@ -140,18 +154,18 @@ contract Blackjack {
         _settleGame();
     }
 
-    function calculateHandValue(uint8[] memory hand) public pure returns (uint8) {
+    function calculateHandValue(Card[] memory hand) public pure returns (uint8) {
         uint8 value = 0;
         uint8 aces = 0;
 
         for (uint8 i = 0; i < hand.length; i++) {
-            if (hand[i] == 1) {
+            if (hand[i].value == 1) {
                 aces++;
                 value += 11;
-            } else if (hand[i] >= 10) {
+            } else if (hand[i].value >= 10) {
                 value += 10;
             } else {
-                value += hand[i];
+                value += hand[i].value;
             }
         }
 
@@ -195,17 +209,16 @@ contract Blackjack {
 
     // Rename the existing private playDealer function to _playDealer
     function _playDealer() private {
-        // Deal the second card to the dealer
-        uint8 secondCard = drawCard();
+        Card memory secondCard = drawCard();
         currentGame.dealerHand.push(secondCard);
-        emit DealerAction("deal", secondCard);
+        emit DealerAction("deal", secondCard.value);
 
         uint8 dealerValue = calculateHandValue(currentGame.dealerHand);
         while (dealerValue < 17) {
-            uint8 newCard = drawCard();
+            Card memory newCard = drawCard();
             currentGame.dealerHand.push(newCard);
             dealerValue = calculateHandValue(currentGame.dealerHand);
-            emit DealerAction("hit", newCard);
+            emit DealerAction("hit", newCard.value);
         }
         emit DealerAction("stand", 0);
     }
@@ -275,10 +288,10 @@ contract Blackjack {
         returns (
             address[] memory playerAddresses,
             uint256[] memory playerBets,
-            uint8[][] memory playerHands,
+            Card[][] memory playerHands,
             bool[] memory playerIsStanding,
             bool[] memory playerHasBusted,
-            uint8[] memory dealerHand,
+            Card[] memory dealerHand,
             uint256 lastActionTimestamp,
             bool isActive,
             uint8 currentPlayerIndex
@@ -287,7 +300,7 @@ contract Blackjack {
         uint256 playerCount = currentGame.players.length;
         playerAddresses = new address[](playerCount);
         playerBets = new uint256[](playerCount);
-        playerHands = new uint8[][](playerCount);
+        playerHands = new Card[][](playerCount);
         playerIsStanding = new bool[](playerCount);
         playerHasBusted = new bool[](playerCount);
 
@@ -318,7 +331,7 @@ contract Blackjack {
     )
         public
         view
-        returns (address playerAddress, uint256 playerBet, uint8[] memory playerHand, bool isStanding, bool hasBusted)
+        returns (address playerAddress, uint256 playerBet, Card[] memory playerHand, bool isStanding, bool hasBusted)
     {
         require(playerIndex < currentGame.players.length, "Invalid player index");
 

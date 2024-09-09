@@ -23,10 +23,10 @@ contract BlackJackTest is Test {
         (
             address[] memory playerAddresses,
             uint256[] memory playerBets,
-            uint8[][] memory playerHands,
+            Blackjack.Card[][] memory playerHands,
             bool[] memory playerIsStanding,
             bool[] memory playerHasBusted,
-            uint8[] memory dealerHand,
+            Blackjack.Card[] memory dealerHand,
             uint256 lastActionTimestamp,
             bool isActive,
             uint8 currentPlayerIndex
@@ -65,7 +65,7 @@ contract BlackJackTest is Test {
 
         blackjack.startDealing();
 
-        (, , uint8[][] memory playerHands, , , uint8[] memory dealerHand, , , ) = blackjack.getGameState();
+        (, , Blackjack.Card[][] memory playerHands, , , Blackjack.Card[] memory dealerHand, , , ) = blackjack.getGameState();
 
         assertEq(playerHands[0].length, 2);
         assertEq(playerHands[1].length, 2);
@@ -81,7 +81,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.hit();
 
-        (, , uint8[][] memory playerHands, , , , , , ) = blackjack.getGameState();
+        (, , Blackjack.Card[][] memory playerHands, , , , , , ) = blackjack.getGameState();
         assertEq(playerHands[0].length, 3);
     }
 
@@ -108,11 +108,11 @@ contract BlackJackTest is Test {
         while (true) {
             vm.prank(player1);
             try blackjack.hit() {
-                (, , uint8[][] memory playerHands, , , , , , ) = blackjack.getGameState();
-                uint8[] memory playerHand = playerHands[0];
+                (, , Blackjack.Card[][] memory playerHands, , , , , , ) = blackjack.getGameState();
+                Blackjack.Card[] memory playerHand = playerHands[0];
                 uint8 handValue = 0;
                 for (uint i = 0; i < playerHand.length; i++) {
-                    handValue += playerHand[i];
+                    handValue += playerHand[i].value;
                 }
                 if (handValue > 21) {
                     break;
@@ -332,7 +332,7 @@ contract BlackJackTest is Test {
         blackjack.playDealer();
 
         // Check that dealer has played
-        (, , , , , uint8[] memory dealerHand, , , ) = blackjack.getGameState();
+        (, , , , , Blackjack.Card[] memory dealerHand, , , ) = blackjack.getGameState();
         assertGe(dealerHand.length, 2);
     }
 
