@@ -20,5 +20,4 @@ export const USDC: ContractAddress = {
   [polygon.id]: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
 };
 
-export const BASE_COLORS: `0x${string}` = "0x7bc1c072742d8391817eb4eb2317f98dc72c61db";
-export const SNAKE_LEADERBOARD: `0x${string}` = "0x3B33A8D63C66128B15FADA4DC2Ef1095172d464A"; //"0xc0b7a3ee154808249077C49Ef8260bb2b566a93B" // sepolia;
+export const BLACKJACK: `0x${string}` = "0xB412B77983f143E467676bfaeA44f92d348c487e";

@@ -5,7 +5,7 @@ export default {
   content: ["./src/**/*.tsx"],
   theme: {},
   daisyui: {
-    themes: ["lofi"],
+    themes: [],
   },
   plugins: [daisyui],
 } satisfies Config;

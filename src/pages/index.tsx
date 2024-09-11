@@ -1,53 +1,63 @@
-import Head from "next/head";
-import Link from "next/link";
+import { type NextPage } from "next";
+import { useEffect, useState } from 'react';
+import { type Hex } from 'viem';
+import { useReadContract } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 
-import CreateGame from "~/components/Game/Create";
-import SignIn from "~/components/Wallet/SignIn";
-import { APP_DESCRIPTION, APP_NAME } from "~/constants";
+import Action from "~/components/Blackjack/Action";
+import Bet from "~/components/Blackjack/Bet";
+import Hand from "~/components/Blackjack/Hand";
+import { Watch } from "~/components/Blackjack/Watch";
+import { abi } from "~/constants/abi/blackjack";
+import { BLACKJACK } from "~/constants/addresses";
 
-export default function Home() {
+export const Blackjack: NextPage = () => {
+  const [players, setPlayers] = useState<Hex[]>([]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
+
+  const { 
+    data,
+    refetch,
+  } = useReadContract({ 
+    address: BLACKJACK, 
+    chainId: baseSepolia.id,
+    abi,
+    functionName: 'getGameState',
+  });
+  console.log({data});
+
+  useEffect(() => {
+    if (data?.[0]) {
+      setPlayers(data[0].map((player) => player));
+    }
+    if (data?.[8]) {
+      setCurrentPlayerIndex(data[8]);
+    }
+  }, [data]);
+
+  // every 5 seconds, refetch the game state
+  useEffect(() => {
+    const interval = setInterval(() => {
+      void refetch();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [refetch]);
+
+
   return (
-    <>
-      <Head>
-        <title>{APP_NAME}</title>
-        <meta name="description" content={APP_DESCRIPTION} />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
-      <main className="flex flex-col justify-center">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight">
-            {APP_NAME}
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <SignIn />
-            <CreateGame />
-          </div>
-        </div>
-      </main>
-    </>
+    <div className="flex flex-col gap-2">
+      <Watch onEvent={() => void refetch()} />
+      <Bet onGameJoined={refetch} />
+      <Action btnLabel="Deal" functionName="startDealing" onActionSuccess={refetch} />
+      <Action btnLabel="Stand" functionName="stand" onActionSuccess={refetch} />
+      <Action btnLabel="Hit" functionName="hit" onActionSuccess={refetch} />
+      <Action btnLabel="Play Dealer" functionName="playDealer" onActionSuccess={refetch} />
+      <Action btnLabel="Settle Game" functionName="settleGame" onActionSuccess={refetch} />
+      {players.map((player, index) => (
+        <Hand key={player} playerIndex={index} isCurrentPlayer={currentPlayerIndex} />
+      ))}
+    </div>
   );
-}
+};
+
+export default Blackjack;

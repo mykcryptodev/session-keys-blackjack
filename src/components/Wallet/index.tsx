@@ -16,7 +16,8 @@ import {
 } from '@coinbase/onchainkit/wallet';
 import { signOut, useSession } from 'next-auth/react';
 import { useEffect } from 'react';
-import { useAccount,useDisconnect } from "wagmi";
+import { useAccount,useChainId,useDisconnect, useSwitchChain } from "wagmi";
+import { baseSepolia } from "wagmi/chains";
 
 import usePrevious from '~/hooks/usePrevious';
 
@@ -28,6 +29,8 @@ export function Wallet({ btnLabel, withWalletAggregator }: Props) {
   const { address } = useAccount();
   const previousAddress = usePrevious(address);
   const { data: sessionData } = useSession();
+  const chainId = useChainId();
+  const { switchChainAsync, isPending } = useSwitchChain();
 
   const { disconnectAsync } = useDisconnect();
 
@@ -43,6 +46,18 @@ export function Wallet({ btnLabel, withWalletAggregator }: Props) {
       void signOut();
     }
   }, [address, disconnectAsync, previousAddress, sessionData]);
+
+  if (chainId && chainId !== baseSepolia.id) {
+    return (
+      <button 
+        className="btn"
+        disabled={isPending}
+        onClick={() => switchChainAsync({ chainId: baseSepolia.id })}
+      >
+        Switch Chain
+      </button>
+    )
+  }
 
   return (
     <div className="flex gap-2 items-center">
