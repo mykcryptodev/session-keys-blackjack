@@ -45,6 +45,9 @@ importers:
       '@types/ws':
         specifier: ^8.5.12
         version: 8.5.12
+      '@wagmi/core':
+        specifier: ^2.13.5
+        version: 2.13.5(@lukasrosario/viem@2.17.4-sessionkeys.7(bufferutil@4.0.8)(typescript@5.6.2)(utf-8-validate@5.0.10)(zod@3.23.8))(@tanstack/query-core@5.56.2)(@types/react@18.3.5)(react@18.3.1)(typescript@5.6.2)
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -1895,6 +1898,18 @@ packages:
     resolution: {integrity: sha512-oCHlQeYOBIJIA2yWy2GnY5wE2A7hGHDyJplJo4lb+KEIBcJWRnDJDg8ywDwQS5VfWJrBBO3drzYZPFpWQjAMiQ==}
     peerDependencies:
       '@vanilla-extract/css': ^1.0.0
+
+  '@wagmi/core@2.13.5':
+    resolution: {integrity: sha512-lvX/hApJTSA/H2kOklokjIYiUpnT8CpBH80GeOiKxU0CGK1wNHTu20GRTCy0GF1t7jkNwPSG3m0SmnXmgYMmHw==}
+    peerDependencies:
+      '@tanstack/query-core': '>=5.0.0'
+      typescript: '>=5.0.4'
+      viem: npm:@lukasrosario/viem@2.17.4-sessionkeys.7
+    peerDependenciesMeta:
+      '@tanstack/query-core':
+        optional: true
+      typescript:
+        optional: true
 
   '@walletconnect/core@2.13.0':
     resolution: {integrity: sha512-blDuZxQenjeXcVJvHxPznTNl6c/2DO4VNrFnus+qHmO6OtT5lZRowdMtlCaCNb1q0OxzgrmBDcTOCbFcCpio/g==}
@@ -7934,6 +7949,20 @@ snapshots:
   '@vanilla-extract/sprinkles@1.6.3(@vanilla-extract/css@1.15.5)':
     dependencies:
       '@vanilla-extract/css': 1.15.5
+
+  '@wagmi/core@2.13.5(@lukasrosario/viem@2.17.4-sessionkeys.7(bufferutil@4.0.8)(typescript@5.6.2)(utf-8-validate@5.0.10)(zod@3.23.8))(@tanstack/query-core@5.56.2)(@types/react@18.3.5)(react@18.3.1)(typescript@5.6.2)':
+    dependencies:
+      eventemitter3: 5.0.1
+      mipd: 0.0.7(typescript@5.6.2)
+      viem: '@lukasrosario/viem@2.17.4-sessionkeys.7(bufferutil@4.0.8)(typescript@5.6.2)(utf-8-validate@5.0.10)(zod@3.23.8)'
+      zustand: 4.4.1(@types/react@18.3.5)(react@18.3.1)
+    optionalDependencies:
+      '@tanstack/query-core': 5.56.2
+      typescript: 5.6.2
+    transitivePeerDependencies:
+      - '@types/react'
+      - immer
+      - react
 
   '@walletconnect/core@2.13.0(bufferutil@4.0.8)(utf-8-validate@5.0.10)':
     dependencies:
