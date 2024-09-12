@@ -35,6 +35,22 @@ contract Blackjack {
         uint256 lastActionTimestamp;
         bool isActive;
         uint8 currentPlayerIndex;
+        bool dealerHasPlayed;
+    }
+
+    struct GameState {
+        address[] playerAddresses;
+        uint256[] playerBets;
+        uint8[][] playerHandValues;
+        Suit[][] playerHandSuits;
+        bool[] playerIsStanding;
+        bool[] playerHasBusted;
+        uint8[] dealerHandValues;
+        Suit[] dealerHandSuits;
+        uint256 lastActionTimestamp;
+        bool isActive;
+        uint8 currentPlayerIndex;
+        bool dealerHasPlayed;
     }
 
     uint256 public constant MIN_BET = 0.0000001 ether;
@@ -257,7 +273,16 @@ contract Blackjack {
             dealerValue = calculateHandValue(currentGame.dealerHand, currentGame.dealerHandSize);
             emit DealerAction("hit", newCard.value);
         }
-        emit DealerAction("stand", 0);
+
+        // Set the dealerHasPlayed flag to true
+        currentGame.dealerHasPlayed = true;
+        
+        // if dealer busts, they never stand
+        if (dealerValue > 21) {
+            emit DealerAction("bust", 0);
+        } else {
+            emit DealerAction("stand", 0);
+        }
     }
 
     // Rename the existing private settleGame function to _settleGame
@@ -303,64 +328,43 @@ contract Blackjack {
         return (lastWinners, lastWinnings);
     }
 
-    function getGameState()
-        public
-        view
-        returns (
-            address[] memory playerAddresses,
-            uint256[] memory playerBets,
-            uint8[][] memory playerHandValues,
-            Suit[][] memory playerHandSuits,
-            bool[] memory playerIsStanding,
-            bool[] memory playerHasBusted,
-            uint8[] memory dealerHandValues,
-            Suit[] memory dealerHandSuits,
-            uint256 lastActionTimestamp,
-            bool isActive,
-            uint8 currentPlayerIndex
-        )
-    {
-        playerAddresses = new address[](currentGame.playerCount);
-        playerBets = new uint256[](currentGame.playerCount);
-        playerHandValues = new uint8[][](currentGame.playerCount);
-        playerHandSuits = new Suit[][](currentGame.playerCount);
-        playerIsStanding = new bool[](currentGame.playerCount);
-        playerHasBusted = new bool[](currentGame.playerCount);
+    // Modify getGameState to use the new GameState struct
+    function getGameState() public view returns (GameState memory) {
+        GameState memory state;
+        state.playerAddresses = new address[](currentGame.playerCount);
+        state.playerBets = new uint256[](currentGame.playerCount);
+        state.playerHandValues = new uint8[][](currentGame.playerCount);
+        state.playerHandSuits = new Suit[][](currentGame.playerCount);
+        state.playerIsStanding = new bool[](currentGame.playerCount);
+        state.playerHasBusted = new bool[](currentGame.playerCount);
 
         for (uint8 i = 0; i < currentGame.playerCount; i++) {
             Player memory player = currentGame.players[i];
-            playerAddresses[i] = player.addr;
-            playerBets[i] = player.bet;
-            playerHandValues[i] = new uint8[](player.handSize);
-            playerHandSuits[i] = new Suit[](player.handSize);
+            state.playerAddresses[i] = player.addr;
+            state.playerBets[i] = player.bet;
+            state.playerHandValues[i] = new uint8[](player.handSize);
+            state.playerHandSuits[i] = new Suit[](player.handSize);
             for (uint8 j = 0; j < player.handSize; j++) {
-                playerHandValues[i][j] = player.hand[j].value;
-                playerHandSuits[i][j] = player.hand[j].suit;
+                state.playerHandValues[i][j] = player.hand[j].value;
+                state.playerHandSuits[i][j] = player.hand[j].suit;
             }
-            playerIsStanding[i] = player.isStanding;
-            playerHasBusted[i] = player.hasBusted;
+            state.playerIsStanding[i] = player.isStanding;
+            state.playerHasBusted[i] = player.hasBusted;
         }
 
-        dealerHandValues = new uint8[](currentGame.dealerHandSize);
-        dealerHandSuits = new Suit[](currentGame.dealerHandSize);
+        state.dealerHandValues = new uint8[](currentGame.dealerHandSize);
+        state.dealerHandSuits = new Suit[](currentGame.dealerHandSize);
         for (uint8 i = 0; i < currentGame.dealerHandSize; i++) {
-            dealerHandValues[i] = currentGame.dealerHand[i].value;
-            dealerHandSuits[i] = currentGame.dealerHand[i].suit;
+            state.dealerHandValues[i] = currentGame.dealerHand[i].value;
+            state.dealerHandSuits[i] = currentGame.dealerHand[i].suit;
         }
 
-        return (
-            playerAddresses,
-            playerBets,
-            playerHandValues,
-            playerHandSuits,
-            playerIsStanding,
-            playerHasBusted,
-            dealerHandValues,
-            dealerHandSuits,
-            currentGame.lastActionTimestamp,
-            currentGame.isActive,
-            currentGame.currentPlayerIndex
-        );
+        state.lastActionTimestamp = currentGame.lastActionTimestamp;
+        state.isActive = currentGame.isActive;
+        state.currentPlayerIndex = currentGame.currentPlayerIndex;
+        state.dealerHasPlayed = currentGame.dealerHasPlayed;
+
+        return state;
     }
 
     function getPlayerState(
