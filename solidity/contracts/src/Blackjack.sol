@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+
 contract Blackjack {
     // New enum for card suits
     enum Suit {
@@ -43,6 +45,7 @@ contract Blackjack {
     Game public currentGame;
     uint256 private nonce;
 
+    IERC721 public immutable cardFidContract;
     mapping(uint8 => mapping(Suit => uint8)) private cardFid;
     
     event GameStarted(uint256 gameId);
@@ -68,6 +71,10 @@ contract Blackjack {
 
     address[] private lastWinners;
     uint256[] private lastWinnings;
+
+    constructor(address _cardFidContract) {
+        cardFidContract = IERC721(_cardFidContract);
+    }
 
     function joinGame() external payable {
         if (currentGame.isActive) revert GameInProgress();
@@ -375,6 +382,17 @@ contract Blackjack {
             player.isStanding,
             player.hasBusted
         );
+    }
+
+    function updateCardFid(uint256 tokenId, uint8 fid) external {
+        require(cardFidContract.ownerOf(tokenId) == msg.sender, "Not the owner of the token");
+        uint8 suit = uint8(tokenId / 13);
+        uint8 rank = uint8(tokenId % 13) + 1;
+        cardFid[rank][Suit(suit)] = fid;
+    }
+
+    function getCardFid(uint8 rank, Suit suit) public view returns (uint8) {
+        return cardFid[rank][suit];
     }
 
     // withdraw to address

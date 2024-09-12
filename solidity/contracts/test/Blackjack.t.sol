@@ -3,15 +3,18 @@ pragma solidity ^0.8.26;
 
 import {Blackjack} from "../src/BlackJack.sol";
 import {Test} from "forge-std/Test.sol";
+import {CardFid} from "../src/CardFid.sol";
 
 contract BlackJackTest is Test {
     Blackjack private blackjack;
+    CardFid private cardFid;
     address public player1 = address(1);
     address public player2 = address(2);
     address public player3 = address(3);
 
     function setUp() public {
-        blackjack = new Blackjack();
+        cardFid = new CardFid();
+        blackjack = new Blackjack(address(cardFid));
         vm.deal(player1, 10 ether);
         vm.deal(player2, 10 ether);
         vm.deal(player3, 10 ether);
@@ -312,5 +315,56 @@ contract BlackJackTest is Test {
         // Check that the game is no longer active
         (, , , , , , , , , bool isActive, ) = blackjack.getGameState();
         assertFalse(isActive);
+    }
+
+    function testUpdateCardFid() public {
+        // Mint a CardFid NFT for player1
+        vm.prank(player1);
+        cardFid.mint();
+
+        // Player1 updates the cardFid for their NFT
+        vm.prank(player1);
+        blackjack.updateCardFid(0, 42); // tokenId 0, new fid 42
+
+        // Try to update with a non-owner (should fail)
+        vm.prank(player2);
+        vm.expectRevert("Not the owner of the token");
+        blackjack.updateCardFid(0, 43);
+
+        // Mint another CardFid NFT for player2
+        vm.prank(player2);
+        cardFid.mint();
+
+        // Player2 updates the cardFid for their NFT
+        vm.prank(player2);
+        blackjack.updateCardFid(1, 44); // tokenId 1, new fid 44
+
+        // Verify the updates (this requires adding a getter function in Blackjack.sol)
+        assertEq(blackjack.getCardFid(1, Blackjack.Suit.Hearts), 42);
+        assertEq(blackjack.getCardFid(2, Blackjack.Suit.Hearts), 44);
+    }
+
+    function testUpdateAllCardFids() public {
+        // Mint all 52 CardFid NFTs for player1
+        vm.startPrank(player1);
+        for (uint256 i = 0; i < 52; i++) {
+            cardFid.mint();
+        }
+        vm.stopPrank();
+
+        // Update all cardFids
+        vm.startPrank(player1);
+        for (uint256 i = 0; i < 52; i++) {
+            blackjack.updateCardFid(i, uint8(i + 100));
+        }
+        vm.stopPrank();
+
+        // Verify all updates
+        for (uint8 suit = 0; suit < 4; suit++) {
+            for (uint8 rank = 1; rank <= 13; rank++) {
+                uint256 tokenId = suit * 13 + (rank - 1);
+                assertEq(blackjack.getCardFid(rank, Blackjack.Suit(suit)), uint8(tokenId + 100));
+            }
+        }
     }
 }
