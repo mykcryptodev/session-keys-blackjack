@@ -1,5 +1,6 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
-import { type FC,useEffect } from "react";
+import { type FC,useEffect, useState } from "react";
+import { type Hex, zeroAddress } from "viem";
 import { useReadContract } from "wagmi";
 import { base,baseSepolia } from "wagmi/chains";
 
@@ -8,55 +9,83 @@ import { BLACKJACK } from "~/constants/addresses";
 
 type Props = {
   playerIndex: number;
-  refetchTimestamp?: number;
   isCurrentPlayer: number;
-}
-export const Hand: FC<Props> = ({ playerIndex, refetchTimestamp, isCurrentPlayer }) => {
-  const { data, isPending, refetch } = useReadContract({
+  isDealerHand: boolean;
+  dealerHand?: readonly number[];
+};
+export const Hand: FC<Props> = ({ 
+  playerIndex,
+  isCurrentPlayer,
+  isDealerHand,
+  dealerHand,
+}) => {
+  const [playerAddress, setPlayerAddress] = useState<Hex>();
+  const [hand, setHand] = useState<readonly number[]>([]);
+  
+  const { data: playerState, refetch } = useReadContract({
     address: BLACKJACK,
     chainId: baseSepolia.id,
     abi: blackjackAbi,
-    functionName: 'getPlayerState',
+    functionName:'getPlayerState',
     args: [BigInt(playerIndex)],
   });
-  const { data: cards } = useReadContract({
+  const { data: handValue } = useReadContract({
     address: BLACKJACK,
     chainId: baseSepolia.id,
     abi: blackjackAbi,
     functionName: 'calculateHandValue',
-    args: [data?.[2] as number[]],
+    args: [hand],
   });
-  
+
+  // every 5 seconds, fetch the player cards
   useEffect(() => {
-    if (refetchTimestamp) {
-      void refetch();
+    if (!isDealerHand) {
+      const interval = setInterval(() => {
+        void refetch();
+      }, 5000);
+      return () => clearInterval(interval);
     }
-  }, [refetch, refetchTimestamp]);
+  }, [isDealerHand, refetch]);
 
-  // every 5 seconds, fetch the cards
   useEffect(() => {
-    const interval = setInterval(() => {
-      void refetch();
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [refetch]);
+    if (playerState && !isDealerHand) {
+      setHand(playerState[2]);
+      setPlayerAddress(playerState[0]);
+      return;
+    }
+    if (dealerHand && isDealerHand) {
+      setHand(dealerHand);
+      setPlayerAddress(zeroAddress);
+    }
+  }, [dealerHand, isDealerHand, playerState]);
 
-  if (data) {
+  console.log({
+    playerAddress,
+    hand,
+    handValue,
+  })
+
+  if (playerAddress) {
     return (
       <div className="flex flex-col gap-2">
         <div className="flex flex-row gap-2 items-center">
-          <Avatar address={data[0]} chain={base} />
-          <Name address={data[0]} chain={base}/>
+          <Avatar address={playerAddress} chain={base} />
+          <Name address={playerAddress} chain={base}/>
           {isCurrentPlayer === playerIndex && (
             <div className="badge">Active</div>
           )}
         </div>
         <div className="flex flex-row gap-2">
-          {data[2].map((card, index) => (
+          {hand.map((card, index) => (
             <div key={index}>
               {card.toLocaleString()}
             </div>
           ))}
+          {handValue && (
+            <div className="font-bold">
+              {handValue.toLocaleString()}
+            </div>
+          )}
         </div>
       </div>
     );
