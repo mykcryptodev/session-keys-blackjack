@@ -7,7 +7,8 @@ contract Blackjack {
         Hearts,
         Diamonds,
         Clubs,
-        Spades
+        Spades,
+        Unknown
     }
 
     struct Card {
@@ -18,27 +19,32 @@ contract Blackjack {
     struct Player {
         address addr;
         uint256 bet;
-        Card[] hand;
+        Card[21] hand; // Fixed-size array for hand
+        uint8 handSize; // To keep track of the actual number of cards in hand
         bool isStanding;
         bool hasBusted;
     }
 
     struct Game {
-        Player[] players;
-        Card[] dealerHand;
+        Player[6] players; // Fixed-size array for players
+        uint8 playerCount; // To keep track of the actual number of players
+        Card[21] dealerHand; // Fixed-size array for dealer's hand
+        uint8 dealerHandSize; // To keep track of the actual number of cards in dealer's hand
         uint256 lastActionTimestamp;
         bool isActive;
         uint8 currentPlayerIndex;
     }
 
     uint256 public constant MIN_BET = 0.0000001 ether;
-    uint256 public constant MAX_BET = 0.000001 ether;
+    uint256 public constant MAX_BET = 2 ether;
     uint256 public constant ACTION_TIMEOUT = 5 minutes;
     uint8 public constant MAX_PLAYERS = 6;
 
     Game public currentGame;
     uint256 private nonce;
 
+    mapping(uint8 => mapping(Suit => uint8)) private cardFid;
+    
     event GameStarted(uint256 gameId);
     event PlayerJoined(address player, uint256 bet);
     event CardsDealt();
@@ -60,28 +66,41 @@ contract Blackjack {
     error NotAllPlayersHaveActed();
     error DealerHasNotPlayed();
 
+    address[] private lastWinners;
+    uint256[] private lastWinnings;
+
     function joinGame() external payable {
         if (currentGame.isActive) revert GameInProgress();
         if (msg.value < MIN_BET || msg.value > MAX_BET) revert BetOutOfRange();
-        if (currentGame.players.length >= MAX_PLAYERS) revert MaxPlayersReached();
+        if (currentGame.playerCount >= MAX_PLAYERS) revert MaxPlayersReached();
 
-        if (currentGame.players.length == MAX_PLAYERS) {
+        if (currentGame.playerCount == MAX_PLAYERS - 1) {
             currentGame.isActive = true;
             emit GameStarted(nonce);
             startDealing();
         }
 
-        currentGame.players.push(
-            Player({addr: msg.sender, bet: msg.value, hand: new Card[](0), isStanding: false, hasBusted: false})
-        );
+        Player storage newPlayer = currentGame.players[currentGame.playerCount];
+        newPlayer.addr = msg.sender;
+        newPlayer.bet = msg.value;
+        newPlayer.handSize = 0;
+        newPlayer.isStanding = false;
+        newPlayer.hasBusted = false;
+
+        // Initialize the hand array in storage
+        for (uint8 i = 0; i < 21; i++) {
+            newPlayer.hand[i] = Card(0, Suit.Unknown);
+        }
+
+        currentGame.playerCount++;
 
         emit PlayerJoined(msg.sender, msg.value);
     }
 
     function startDealing() public {
         if (currentGame.isActive) revert CardsAlreadyDealt();
-        if (currentGame.players.length == 0) revert NoPlayersInGame();
-        if (currentGame.dealerHand.length != 0) revert CardsAlreadyDealt();
+        if (currentGame.playerCount == 0) revert NoPlayersInGame();
+        if (currentGame.dealerHandSize != 0) revert CardsAlreadyDealt();
 
         currentGame.isActive = true;
         dealCards();
@@ -92,11 +111,11 @@ contract Blackjack {
     function hit() external {
         if (!canPlayerAct(msg.sender)) revert NotPlayerTurn();
 
-        Card memory card = drawCard();
         Player storage player = currentGame.players[currentGame.currentPlayerIndex];
-        player.hand.push(card);
+        player.hand[player.handSize] = drawCard();
+        player.handSize++;
 
-        if (calculateHandValue(player.hand) > 21) {
+        if (calculateHandValue(player.hand, player.handSize) > 21) {
             player.hasBusted = true;
             nextPlayer();
         }
@@ -128,13 +147,15 @@ contract Blackjack {
     }
 
     function dealCards() private {
-        for (uint8 i = 0; i < currentGame.players.length; i++) {
-            currentGame.players[i].hand.push(drawCard());
-            currentGame.players[i].hand.push(drawCard());
+        for (uint8 i = 0; i < currentGame.playerCount; i++) {
+            Player storage player = currentGame.players[i];
+            player.hand[0] = drawCard();
+            player.hand[1] = drawCard();
+            player.handSize = 2;
         }
 
-        // Deal only one card to the dealer initially
-        currentGame.dealerHand.push(drawCard());
+        currentGame.dealerHand[0] = drawCard();
+        currentGame.dealerHandSize = 1;
     }
 
     function drawCard() private returns (Card memory) {
@@ -148,17 +169,17 @@ contract Blackjack {
     // New function to initiate dealer play and game settlement
     function playDealerAndSettleGame() external {
         if (!currentGame.isActive) revert NoActiveGame();
-        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
+        if (currentGame.currentPlayerIndex < currentGame.playerCount) revert NotAllPlayersHaveActed();
 
         _playDealer();
         _settleGame();
     }
 
-    function calculateHandValue(Card[] memory hand) public pure returns (uint8) {
+    function calculateHandValue(Card[21] memory hand, uint8 handSize) public pure returns (uint8) {
         uint8 value = 0;
         uint8 aces = 0;
 
-        for (uint8 i = 0; i < hand.length; i++) {
+        for (uint8 i = 0; i < handSize; i++) {
             if (hand[i].value == 1) {
                 aces++;
                 value += 11;
@@ -179,7 +200,7 @@ contract Blackjack {
 
     function canPlayerAct(address player) private view returns (bool) {
         if (!currentGame.isActive) revert NoActiveGame();
-        if (currentGame.currentPlayerIndex >= currentGame.players.length) revert AllPlayersHaveActed();
+        if (currentGame.currentPlayerIndex >= currentGame.playerCount) revert AllPlayersHaveActed();
 
         Player storage currentPlayer = currentGame.players[currentGame.currentPlayerIndex];
         return currentPlayer.addr == player && !currentPlayer.isStanding && !currentPlayer.hasBusted;
@@ -193,7 +214,7 @@ contract Blackjack {
     // New function to only play the dealer's hand
     function playDealer() external {
         if (!currentGame.isActive) revert NoActiveGame();
-        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
+        if (currentGame.currentPlayerIndex < currentGame.playerCount) revert NotAllPlayersHaveActed();
 
         _playDealer();
     }
@@ -201,8 +222,8 @@ contract Blackjack {
     // New function to only settle the game
     function settleGame() external {
         if (!currentGame.isActive) revert NoActiveGame();
-        if (currentGame.currentPlayerIndex < currentGame.players.length) revert NotAllPlayersHaveActed();
-        if (currentGame.dealerHand.length < 2) revert DealerHasNotPlayed();
+        if (currentGame.currentPlayerIndex < currentGame.playerCount) revert NotAllPlayersHaveActed();
+        if (currentGame.dealerHandSize < 2) revert DealerHasNotPlayed();
 
         _settleGame();
     }
@@ -210,14 +231,16 @@ contract Blackjack {
     // Rename the existing private playDealer function to _playDealer
     function _playDealer() private {
         Card memory secondCard = drawCard();
-        currentGame.dealerHand.push(secondCard);
+        currentGame.dealerHand[currentGame.dealerHandSize] = secondCard;
+        currentGame.dealerHandSize++;
         emit DealerAction("deal", secondCard.value);
 
-        uint8 dealerValue = calculateHandValue(currentGame.dealerHand);
+        uint8 dealerValue = calculateHandValue(currentGame.dealerHand, currentGame.dealerHandSize);
         while (dealerValue < 17) {
             Card memory newCard = drawCard();
-            currentGame.dealerHand.push(newCard);
-            dealerValue = calculateHandValue(currentGame.dealerHand);
+            currentGame.dealerHand[currentGame.dealerHandSize] = newCard;
+            currentGame.dealerHandSize++;
+            dealerValue = calculateHandValue(currentGame.dealerHand, currentGame.dealerHandSize);
             emit DealerAction("hit", newCard.value);
         }
         emit DealerAction("stand", 0);
@@ -225,14 +248,14 @@ contract Blackjack {
 
     // Rename the existing private settleGame function to _settleGame
     function _settleGame() private {
-        uint8 dealerValue = calculateHandValue(currentGame.dealerHand);
-        address[] memory winners = new address[](currentGame.players.length);
-        uint256[] memory winnings = new uint256[](currentGame.players.length);
+        uint8 dealerValue = calculateHandValue(currentGame.dealerHand, currentGame.dealerHandSize);
+        address[] memory winners = new address[](currentGame.playerCount);
+        uint256[] memory winnings = new uint256[](currentGame.playerCount);
         uint256 winnerCount = 0;
 
-        for (uint8 i = 0; i < currentGame.players.length; i++) {
+        for (uint8 i = 0; i < currentGame.playerCount; i++) {
             Player storage player = currentGame.players[i];
-            uint8 playerValue = calculateHandValue(player.hand);
+            uint8 playerValue = calculateHandValue(player.hand, player.handSize);
 
             if (!player.hasBusted && (playerValue > dealerValue || dealerValue > 21)) {
                 winners[winnerCount] = player.addr;
@@ -246,7 +269,15 @@ contract Blackjack {
             }
         }
 
-        emit GameEnded(winners, winnings);
+        // Store the winners and winnings
+        lastWinners = new address[](winnerCount);
+        lastWinnings = new uint256[](winnerCount);
+        for (uint256 i = 0; i < winnerCount; i++) {
+            lastWinners[i] = winners[i];
+            lastWinnings[i] = winnings[i];
+        }
+
+        emit GameEnded(lastWinners, lastWinnings);
         resetGame();
     }
 
@@ -255,31 +286,7 @@ contract Blackjack {
     }
 
     function getWinners() public view returns (address[] memory, uint256[] memory) {
-        require(!currentGame.isActive, "Game is still in progress");
-
-        address[] memory winners = new address[](currentGame.players.length);
-        uint256[] memory winnings = new uint256[](currentGame.players.length);
-        uint256 winnerCount = 0;
-        uint8 dealerValue = calculateHandValue(currentGame.dealerHand);
-
-        for (uint8 i = 0; i < currentGame.players.length; i++) {
-            Player storage player = currentGame.players[i];
-            uint8 playerValue = calculateHandValue(player.hand);
-
-            if (!player.hasBusted && (playerValue > dealerValue || dealerValue > 21)) {
-                winners[winnerCount] = player.addr;
-                winnings[winnerCount] = player.bet * 2;
-                winnerCount++;
-            }
-        }
-
-        // Resize arrays to remove empty slots
-        assembly {
-            mstore(winners, winnerCount)
-            mstore(winnings, winnerCount)
-        }
-
-        return (winners, winnings);
+        return (lastWinners, lastWinnings);
     }
 
     function getGameState()
@@ -288,38 +295,54 @@ contract Blackjack {
         returns (
             address[] memory playerAddresses,
             uint256[] memory playerBets,
-            Card[][] memory playerHands,
+            uint8[][] memory playerHandValues,
+            Suit[][] memory playerHandSuits,
             bool[] memory playerIsStanding,
             bool[] memory playerHasBusted,
-            Card[] memory dealerHand,
+            uint8[] memory dealerHandValues,
+            Suit[] memory dealerHandSuits,
             uint256 lastActionTimestamp,
             bool isActive,
             uint8 currentPlayerIndex
         )
     {
-        uint256 playerCount = currentGame.players.length;
-        playerAddresses = new address[](playerCount);
-        playerBets = new uint256[](playerCount);
-        playerHands = new Card[][](playerCount);
-        playerIsStanding = new bool[](playerCount);
-        playerHasBusted = new bool[](playerCount);
+        playerAddresses = new address[](currentGame.playerCount);
+        playerBets = new uint256[](currentGame.playerCount);
+        playerHandValues = new uint8[][](currentGame.playerCount);
+        playerHandSuits = new Suit[][](currentGame.playerCount);
+        playerIsStanding = new bool[](currentGame.playerCount);
+        playerHasBusted = new bool[](currentGame.playerCount);
 
-        for (uint256 i = 0; i < playerCount; i++) {
+        for (uint8 i = 0; i < currentGame.playerCount; i++) {
             Player memory player = currentGame.players[i];
             playerAddresses[i] = player.addr;
             playerBets[i] = player.bet;
-            playerHands[i] = player.hand;
+            playerHandValues[i] = new uint8[](player.handSize);
+            playerHandSuits[i] = new Suit[](player.handSize);
+            for (uint8 j = 0; j < player.handSize; j++) {
+                playerHandValues[i][j] = player.hand[j].value;
+                playerHandSuits[i][j] = player.hand[j].suit;
+            }
             playerIsStanding[i] = player.isStanding;
             playerHasBusted[i] = player.hasBusted;
+        }
+
+        dealerHandValues = new uint8[](currentGame.dealerHandSize);
+        dealerHandSuits = new Suit[](currentGame.dealerHandSize);
+        for (uint8 i = 0; i < currentGame.dealerHandSize; i++) {
+            dealerHandValues[i] = currentGame.dealerHand[i].value;
+            dealerHandSuits[i] = currentGame.dealerHand[i].suit;
         }
 
         return (
             playerAddresses,
             playerBets,
-            playerHands,
+            playerHandValues,
+            playerHandSuits,
             playerIsStanding,
             playerHasBusted,
-            currentGame.dealerHand,
+            dealerHandValues,
+            dealerHandSuits,
             currentGame.lastActionTimestamp,
             currentGame.isActive,
             currentGame.currentPlayerIndex
@@ -331,13 +354,27 @@ contract Blackjack {
     )
         public
         view
-        returns (address playerAddress, uint256 playerBet, Card[] memory playerHand, bool isStanding, bool hasBusted)
+        returns (
+            address playerAddress,
+            uint256 playerBet,
+            Card[21] memory playerHand,
+            uint8 handSize,
+            bool isStanding,
+            bool hasBusted
+        )
     {
-        require(playerIndex < currentGame.players.length, "Invalid player index");
+        require(playerIndex < currentGame.playerCount, "Invalid player index");
 
-        Player memory player = currentGame.players[playerIndex];
+        Player storage player = currentGame.players[playerIndex];
 
-        return (player.addr, player.bet, player.hand, player.isStanding, player.hasBusted);
+        return (
+            player.addr,
+            player.bet,
+            player.hand,
+            player.handSize,
+            player.isStanding,
+            player.hasBusted
+        );
     }
 
     // withdraw to address

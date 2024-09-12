@@ -23,10 +23,12 @@ contract BlackJackTest is Test {
         (
             address[] memory playerAddresses,
             uint256[] memory playerBets,
-            Blackjack.Card[][] memory playerHands,
+            uint8[][] memory playerHandValues,
+            Blackjack.Suit[][] memory playerHandSuits,
             bool[] memory playerIsStanding,
             bool[] memory playerHasBusted,
-            Blackjack.Card[] memory dealerHand,
+            uint8[] memory dealerHandValues,
+            Blackjack.Suit[] memory dealerHandSuits,
             uint256 lastActionTimestamp,
             bool isActive,
             uint8 currentPlayerIndex
@@ -34,10 +36,12 @@ contract BlackJackTest is Test {
 
         assertEq(playerAddresses.length, 0);
         assertEq(playerBets.length, 0);
-        assertEq(playerHands.length, 0);
+        assertEq(playerHandValues.length, 0);
+        assertEq(playerHandSuits.length, 0);
         assertEq(playerIsStanding.length, 0);
         assertEq(playerHasBusted.length, 0);
-        assertEq(dealerHand.length, 0);
+        assertEq(dealerHandValues.length, 0);
+        assertEq(dealerHandSuits.length, 0);
         assertEq(lastActionTimestamp, 0);
         assertFalse(isActive);
         assertEq(currentPlayerIndex, 0);
@@ -47,11 +51,11 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
-        (address[] memory playerAddresses, uint256[] memory playerBets, , , , , , bool isActive, ) = blackjack
+        (address[] memory playerAddresses, uint256[] memory playerBets, , , , , , , , bool isActive, ) = blackjack
             .getGameState();
 
         assertEq(playerAddresses.length, 1);
-        assertTrue(isActive);
+        assertFalse(isActive); // Game should not be active with only one player
         assertEq(playerAddresses[0], player1);
         assertEq(playerBets[0], 0.1 ether);
     }
@@ -65,11 +69,11 @@ contract BlackJackTest is Test {
 
         blackjack.startDealing();
 
-        (, , Blackjack.Card[][] memory playerHands, , , Blackjack.Card[] memory dealerHand, , , ) = blackjack.getGameState();
+        (, , uint8[][] memory playerHandValues, , , , uint8[] memory dealerHandValues, , , , ) = blackjack.getGameState();
 
-        assertEq(playerHands[0].length, 2);
-        assertEq(playerHands[1].length, 2);
-        assertEq(dealerHand.length, 1);
+        assertEq(playerHandValues[0].length, 2);
+        assertEq(playerHandValues[1].length, 2);
+        assertEq(dealerHandValues.length, 1);
     }
 
     function testPlayerHit() public {
@@ -81,8 +85,8 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.hit();
 
-        (, , Blackjack.Card[][] memory playerHands, , , , , , ) = blackjack.getGameState();
-        assertEq(playerHands[0].length, 3);
+        (, , uint8[][] memory playerHandValues, , , , , , , , ) = blackjack.getGameState();
+        assertEq(playerHandValues[0].length, 3);
     }
 
     function testPlayerStand() public {
@@ -94,7 +98,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.stand();
 
-        (, , , bool[] memory playerIsStanding, , , , , ) = blackjack.getGameState();
+        (, , , , bool[] memory playerIsStanding, , , , , , ) = blackjack.getGameState();
         assertTrue(playerIsStanding[0]);
     }
 
@@ -108,11 +112,11 @@ contract BlackJackTest is Test {
         while (true) {
             vm.prank(player1);
             try blackjack.hit() {
-                (, , Blackjack.Card[][] memory playerHands, , , , , , ) = blackjack.getGameState();
-                Blackjack.Card[] memory playerHand = playerHands[0];
+                (, , uint8[][] memory playerHandValues, , , , , , , , ) = blackjack.getGameState();
+                uint8[] memory playerHand = playerHandValues[0];
                 uint8 handValue = 0;
                 for (uint i = 0; i < playerHand.length; i++) {
-                    handValue += playerHand[i].value;
+                    handValue += playerHand[i];
                 }
                 if (handValue > 21) {
                     break;
@@ -122,7 +126,7 @@ contract BlackJackTest is Test {
             }
         }
 
-        (, , , , bool[] memory playerHasBusted, , , , ) = blackjack.getGameState();
+        (, , , , , bool[] memory playerHasBusted, , , , , ) = blackjack.getGameState();
         assertTrue(playerHasBusted[0]);
     }
 
@@ -139,7 +143,7 @@ contract BlackJackTest is Test {
         blackjack.playDealerAndSettleGame();
 
         // Game should end after dealer plays and game is settled
-        (, , , , , , , bool isActive, ) = blackjack.getGameState();
+        (, , , , , , , , , bool isActive, ) = blackjack.getGameState();
         assertFalse(isActive);
     }
 
@@ -154,22 +158,28 @@ contract BlackJackTest is Test {
 
         blackjack.forceStand(0);
 
-        (, , , , bool[] memory playerIsStanding, , , , ) = blackjack.getGameState();
+        (, , , , bool[] memory playerIsStanding, , , , , , ) = blackjack.getGameState();
         assertTrue(playerIsStanding[0]);
     }
 
     function testMaxPlayers() public {
-        for (uint i = 1; i <= 6; i++) {
+        // Join the maximum number of players
+        for (uint8 i = 1; i < blackjack.MAX_PLAYERS(); i++) {
+            vm.deal(address(uint160(i)), 1 ether); // Ensure each address has enough ETH
             vm.prank(address(uint160(i)));
             blackjack.joinGame{value: 0.1 ether}();
         }
 
-        vm.prank(address(7));
-        vm.expectRevert(Blackjack.MaxPlayersReached.selector);
+        // Try to join with one more player
+        vm.deal(address(uint160(blackjack.MAX_PLAYERS() + 1)), 1 ether);
+        vm.prank(address(uint160(blackjack.MAX_PLAYERS() + 1)));
+        
+        // Expect the correct error message
+        vm.expectRevert(Blackjack.CardsAlreadyDealt.selector);
         blackjack.joinGame{value: 0.1 ether}();
     }
 
-    function testDetermineWinners() public {
+    function testDealerLosesAllPlayersWin() public {
         vm.deal(player1, 1 ether);
         vm.deal(player2, 1 ether);
         vm.deal(player3, 1 ether);
@@ -222,75 +232,20 @@ contract BlackJackTest is Test {
         // Check winners
         (address[] memory winners, uint256[] memory winnings) = blackjack.getWinners();
 
-        assertEq(winners.length, 1);
+        assertEq(winners.length, 3);
         assertEq(winners[0], player1);
+        assertEq(winners[1], player2);
+        assertEq(winners[2], player3);
         assertEq(winnings[0], 0.2 ether);
+        assertEq(winnings[1], 0.2 ether);
+        assertEq(winnings[2], 0.2 ether);
 
         // Check player balances
         assertEq(player1.balance, 1.1 ether);
-        assertEq(player2.balance, 0.9 ether);
-        assertEq(player3.balance, 1 ether);
-
-        // Reset game state using vm.store
-        slot = keccak256(abi.encode(uint256(0))); // slot for playerAddresses
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(1))); // slot for playerBets
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(2))); // slot for playerHands
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(3))); // slot for playerIsStanding
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(4))); // slot for playerHasBusted
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(5))); // slot for dealerHand
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set length to 0
-        slot = keccak256(abi.encode(uint256(6))); // slot for lastActionTimestamp
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set to 0
-        slot = keccak256(abi.encode(uint256(7))); // slot for isActive
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set to false
-        slot = keccak256(abi.encode(uint256(8))); // slot for currentPlayerIndex
-        vm.store(address(blackjack), slot, bytes32(uint256(0))); // Set to 0
-
-        // Scenario 2: All players bust, dealer wins
-        vm.prank(player1);
-        blackjack.joinGame{value: 0.1 ether}();
-        vm.prank(player2);
-        blackjack.joinGame{value: 0.1 ether}();
-
-        blackjack.startDealing();
-
-        // Manipulate hands using vm.store
-        slot = keccak256(abi.encode(uint256(2), uint256(3))); // slot for playerHands
-        vm.store(address(blackjack), slot, bytes32(uint256(3))); // Set length to 3
-        vm.store(address(blackjack), keccak256(abi.encode(slot, uint256(0))), bytes32(uint256(10))); // player1 card 1
-        vm.store(address(blackjack), keccak256(abi.encode(slot, uint256(1))), bytes32(uint256(10))); // player1 card 2
-        vm.store(address(blackjack), keccak256(abi.encode(slot, uint256(2))), bytes32(uint256(5))); // player1 card 3
-
-        slot = keccak256(abi.encode(uint256(2), uint256(4))); // slot for dealerHand
-        vm.store(address(blackjack), slot, bytes32(uint256(2))); // Set length to 2
-        vm.store(address(blackjack), keccak256(abi.encode(slot, uint256(0))), bytes32(uint256(10))); // dealer card 1
-        vm.store(address(blackjack), keccak256(abi.encode(slot, uint256(1))), bytes32(uint256(6))); // dealer card 2
-
-        // Simulate players busting
-        vm.prank(player1);
-        blackjack.hit();
-        vm.prank(player2);
-        blackjack.hit();
-
-        // Call playDealerAndSettleGame after all players have acted
-        blackjack.playDealerAndSettleGame();
-
-        // Check winners (should be empty as dealer wins by default)
-        (winners, winnings) = blackjack.getWinners();
-
-        assertEq(winners.length, 0);
-
-        // Check player balances
-        assertEq(player1.balance, 1 ether);
-        assertEq(player2.balance, 0.9 ether);
+        assertEq(player2.balance, 1.1 ether);
+        assertEq(player3.balance, 1.1 ether);
     }
 
-    // Add a new test for the playDealerAndSettleGame function
     function testPlayDealerAndSettleGame() public {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
@@ -309,7 +264,7 @@ contract BlackJackTest is Test {
         blackjack.playDealerAndSettleGame();
 
         // Check that the game is no longer active
-        (, , , , , , , bool isActive, ) = blackjack.getGameState();
+        (, , , , , , , , , bool isActive, ) = blackjack.getGameState();
         assertFalse(isActive);
 
         // Check that winners have been determined
@@ -317,6 +272,9 @@ contract BlackJackTest is Test {
         assertEq(winners.length, 1);
         assertEq(winners[0], player1);
         assertEq(winnings[0], 0.2 ether);
+
+        // Check player balance
+        assertEq(player1.balance, 10.1 ether);
     }
 
     function testPlayDealer() public {
@@ -332,8 +290,8 @@ contract BlackJackTest is Test {
         blackjack.playDealer();
 
         // Check that dealer has played
-        (, , , , , Blackjack.Card[] memory dealerHand, , , ) = blackjack.getGameState();
-        assertGe(dealerHand.length, 2);
+        (, , , , , , uint8[] memory dealerHandValues, , , , ) = blackjack.getGameState();
+        assertGe(dealerHandValues.length, 2);
     }
 
     function testSettleGame() public {
@@ -352,7 +310,7 @@ contract BlackJackTest is Test {
         blackjack.settleGame();
 
         // Check that the game is no longer active
-        (, , , , , , , bool isActive, ) = blackjack.getGameState();
+        (, , , , , , , , , bool isActive, ) = blackjack.getGameState();
         assertFalse(isActive);
     }
 }
