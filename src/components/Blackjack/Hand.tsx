@@ -1,8 +1,8 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
-import { type FC,useEffect, useState } from "react";
+import { type FC, useEffect, useState } from "react";
 import { type Hex, zeroAddress } from "viem";
 import { useReadContract } from "wagmi";
-import { base,baseSepolia } from "wagmi/chains";
+import { base, baseSepolia } from "wagmi/chains";
 
 import { abi as blackjackAbi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
@@ -11,33 +11,47 @@ type Props = {
   playerIndex: number;
   isCurrentPlayer: number;
   isDealerHand: boolean;
-  dealerHand?: readonly number[];
+  dealerHandValues?: readonly number[];
+  dealerHandSuits?: readonly number[];
 };
+
 export const Hand: FC<Props> = ({ 
   playerIndex,
   isCurrentPlayer,
   isDealerHand,
-  dealerHand,
+  dealerHandValues,
+  dealerHandSuits,
 }) => {
   const [playerAddress, setPlayerAddress] = useState<Hex>();
-  const [hand, setHand] = useState<readonly number[]>([]);
-  
+  const [handValues, setHandValues] = useState<readonly number[]>([]);
+  const [handSuits, setHandSuits] = useState<readonly number[]>([]);
+
   const { data: playerState, refetch } = useReadContract({
     address: BLACKJACK,
     chainId: baseSepolia.id,
     abi: blackjackAbi,
-    functionName:'getPlayerState',
+    functionName: 'getPlayerState',
     args: [BigInt(playerIndex)],
   });
+
   const { data: handValue } = useReadContract({
     address: BLACKJACK,
     chainId: baseSepolia.id,
     abi: blackjackAbi,
     functionName: 'calculateHandValue',
-    args: [hand],
+    args: [
+      // @ts-expect-error - TS doesn't like the array length
+      Array.from({ length: 21 }, (_, i) => {
+        const value = handValues[i] ?? 0;
+        const suit = handSuits[i] ?? 0;
+        return { value, suit };
+      }),
+      handValues.length,
+    ],
   });
 
-  // every 5 seconds, fetch the player cards
+  console.log({ handValue });
+
   useEffect(() => {
     if (!isDealerHand) {
       const interval = setInterval(() => {
@@ -49,21 +63,15 @@ export const Hand: FC<Props> = ({
 
   useEffect(() => {
     if (playerState && !isDealerHand) {
-      setHand(playerState[2]);
+      setHandValues(playerState[2].slice(0, playerState[3]).map(card => card.value));
+      setHandSuits(playerState[2].slice(0, playerState[3]).map(card => card.suit));
       setPlayerAddress(playerState[0]);
-      return;
-    }
-    if (dealerHand && isDealerHand) {
-      setHand(dealerHand);
+    } else if (dealerHandValues && dealerHandSuits && isDealerHand) {
+      setHandValues(dealerHandValues);
+      setHandSuits(dealerHandSuits);
       setPlayerAddress(zeroAddress);
     }
-  }, [dealerHand, isDealerHand, playerState]);
-
-  console.log({
-    playerAddress,
-    hand,
-    handValue,
-  })
+  }, [dealerHandValues, dealerHandSuits, isDealerHand, playerState]);
 
   if (playerAddress) {
     return (
@@ -76,14 +84,14 @@ export const Hand: FC<Props> = ({
           )}
         </div>
         <div className="flex flex-row gap-2">
-          {hand.map((card, index) => (
+          {handValues.filter(v => v).map((value, index) => (
             <div key={index}>
-              {card.toLocaleString()}
+              {`${value}${getSuitSymbol(handSuits[index])}`}
             </div>
           ))}
           {handValue && (
             <div className="font-bold">
-              {handValue.toLocaleString()}
+              {handValue.toString()}
             </div>
           )}
         </div>
@@ -92,5 +100,15 @@ export const Hand: FC<Props> = ({
   }
   return null;
 };
+
+function getSuitSymbol(suit: number | undefined): string {
+  switch (suit) {
+    case 0: return "♥"; // Hearts
+    case 1: return "♦"; // Diamonds
+    case 2: return "♣"; // Clubs
+    case 3: return "♠"; // Spades
+    default: return "?"; // Unknown
+  }
+}
 
 export default Hand;

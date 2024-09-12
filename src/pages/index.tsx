@@ -14,7 +14,8 @@ import { BLACKJACK } from "~/constants/addresses";
 export const Blackjack: NextPage = () => {
   const [players, setPlayers] = useState<Hex[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
-  const [dealerHand, setDealerHand] = useState<readonly number[]>([]);
+  const [dealerHandValues, setDealerHandValues] = useState<readonly number[]>([]);
+  const [dealerHandSuits, setDealerHandSuits] = useState<readonly number[]>([]);
 
   const { 
     data,
@@ -28,14 +29,15 @@ export const Blackjack: NextPage = () => {
   console.log({data});
 
   useEffect(() => {
-    if (data?.[0]) {
-      setPlayers(data[0].map((player) => player).concat(zeroAddress));
+    if (data?.playerAddresses) {
+      setPlayers(data?.playerAddresses.map((player) => player).concat(zeroAddress));
     }
-    if (data?.[8]) {
-      setCurrentPlayerIndex(data[8]);
+    if (data?.currentPlayerIndex) {
+      setCurrentPlayerIndex(data.currentPlayerIndex);
     }
-    if (data?.[5]) {
-      setDealerHand(data[5]);
+    if (data?.dealerHandValues && data?.dealerHandSuits) {
+      setDealerHandValues(data.dealerHandValues);
+      setDealerHandSuits(data.dealerHandSuits);
     }
   }, [data]);
 
@@ -64,7 +66,8 @@ export const Blackjack: NextPage = () => {
           playerIndex={index} 
           isCurrentPlayer={currentPlayerIndex}
           isDealerHand={index === players.length - 1}
-          dealerHand={dealerHand}
+          dealerHandValues={dealerHandValues}
+          dealerHandSuits={dealerHandSuits}
         />
       ))}
     </div>

@@ -1,4 +1,11 @@
 export const abi = [
+  {
+    inputs: [
+      { internalType: "address", name: "_cardFidContract", type: "address" },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
   { inputs: [], name: "AllPlayersHaveActed", type: "error" },
   { inputs: [], name: "BetOutOfRange", type: "error" },
   { inputs: [], name: "CannotForceStandYet", type: "error" },
@@ -12,6 +19,7 @@ export const abi = [
   { inputs: [], name: "NotAllPlayersHaveActed", type: "error" },
   { inputs: [], name: "NotCurrentPlayerTurn", type: "error" },
   { inputs: [], name: "NotPlayerTurn", type: "error" },
+  { inputs: [], name: "PlayerAlreadyJoined", type: "error" },
   { anonymous: false, inputs: [], name: "CardsDealt", type: "event" },
   {
     anonymous: false,
@@ -106,6 +114,13 @@ export const abi = [
   },
   {
     inputs: [],
+    name: "CARD_FID_CONTRACT",
+    outputs: [{ internalType: "contract IERC721", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
     name: "MAX_BET",
     outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
     stateMutability: "view",
@@ -126,7 +141,18 @@ export const abi = [
     type: "function",
   },
   {
-    inputs: [{ internalType: "uint8[]", name: "hand", type: "uint8[]" }],
+    inputs: [
+      {
+        components: [
+          { internalType: "uint8", name: "value", type: "uint8" },
+          { internalType: "enum Blackjack.Suit", name: "suit", type: "uint8" },
+        ],
+        internalType: "struct Blackjack.Card[21]",
+        name: "hand",
+        type: "tuple[21]",
+      },
+      { internalType: "uint8", name: "handSize", type: "uint8" },
+    ],
     name: "calculateHandValue",
     outputs: [{ internalType: "uint8", name: "", type: "uint8" }],
     stateMutability: "pure",
@@ -136,9 +162,12 @@ export const abi = [
     inputs: [],
     name: "currentGame",
     outputs: [
+      { internalType: "uint8", name: "playerCount", type: "uint8" },
+      { internalType: "uint8", name: "dealerHandSize", type: "uint8" },
       { internalType: "uint256", name: "lastActionTimestamp", type: "uint256" },
       { internalType: "bool", name: "isActive", type: "bool" },
       { internalType: "uint8", name: "currentPlayerIndex", type: "uint8" },
+      { internalType: "bool", name: "dealerHasPlayed", type: "bool" },
     ],
     stateMutability: "view",
     type: "function",
@@ -151,18 +180,62 @@ export const abi = [
     type: "function",
   },
   {
+    inputs: [
+      { internalType: "uint8", name: "rank", type: "uint8" },
+      { internalType: "enum Blackjack.Suit", name: "suit", type: "uint8" },
+    ],
+    name: "getCardFid",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "getGameState",
     outputs: [
-      { internalType: "address[]", name: "playerAddresses", type: "address[]" },
-      { internalType: "uint256[]", name: "playerBets", type: "uint256[]" },
-      { internalType: "uint8[][]", name: "playerHands", type: "uint8[][]" },
-      { internalType: "bool[]", name: "playerIsStanding", type: "bool[]" },
-      { internalType: "bool[]", name: "playerHasBusted", type: "bool[]" },
-      { internalType: "uint8[]", name: "dealerHand", type: "uint8[]" },
-      { internalType: "uint256", name: "lastActionTimestamp", type: "uint256" },
-      { internalType: "bool", name: "isActive", type: "bool" },
-      { internalType: "uint8", name: "currentPlayerIndex", type: "uint8" },
+      {
+        components: [
+          {
+            internalType: "address[]",
+            name: "playerAddresses",
+            type: "address[]",
+          },
+          { internalType: "uint256[]", name: "playerBets", type: "uint256[]" },
+          {
+            internalType: "uint8[][]",
+            name: "playerHandValues",
+            type: "uint8[][]",
+          },
+          {
+            internalType: "enum Blackjack.Suit[][]",
+            name: "playerHandSuits",
+            type: "uint8[][]",
+          },
+          { internalType: "bool[]", name: "playerIsStanding", type: "bool[]" },
+          { internalType: "bool[]", name: "playerHasBusted", type: "bool[]" },
+          {
+            internalType: "uint8[]",
+            name: "dealerHandValues",
+            type: "uint8[]",
+          },
+          {
+            internalType: "enum Blackjack.Suit[]",
+            name: "dealerHandSuits",
+            type: "uint8[]",
+          },
+          {
+            internalType: "uint256",
+            name: "lastActionTimestamp",
+            type: "uint256",
+          },
+          { internalType: "bool", name: "isActive", type: "bool" },
+          { internalType: "uint8", name: "currentPlayerIndex", type: "uint8" },
+          { internalType: "bool", name: "dealerHasPlayed", type: "bool" },
+        ],
+        internalType: "struct Blackjack.GameState",
+        name: "",
+        type: "tuple",
+      },
     ],
     stateMutability: "view",
     type: "function",
@@ -173,7 +246,16 @@ export const abi = [
     outputs: [
       { internalType: "address", name: "playerAddress", type: "address" },
       { internalType: "uint256", name: "playerBet", type: "uint256" },
-      { internalType: "uint8[]", name: "playerHand", type: "uint8[]" },
+      {
+        components: [
+          { internalType: "uint8", name: "value", type: "uint8" },
+          { internalType: "enum Blackjack.Suit", name: "suit", type: "uint8" },
+        ],
+        internalType: "struct Blackjack.Card[21]",
+        name: "playerHand",
+        type: "tuple[21]",
+      },
+      { internalType: "uint8", name: "handSize", type: "uint8" },
       { internalType: "bool", name: "isStanding", type: "bool" },
       { internalType: "bool", name: "hasBusted", type: "bool" },
     ],
@@ -235,6 +317,16 @@ export const abi = [
   {
     inputs: [],
     name: "startDealing",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "uint256", name: "tokenId", type: "uint256" },
+      { internalType: "uint256", name: "fid", type: "uint256" },
+    ],
+    name: "updateCardFid",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
