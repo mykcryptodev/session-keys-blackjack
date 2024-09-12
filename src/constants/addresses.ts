@@ -20,5 +20,5 @@ export const USDC: ContractAddress = {
   [polygon.id]: "0x3c499c542cef5e3811e1192ce70d8cc03d5c3359",
 };
 
-export const BLACKJACK: `0x${string}` = "0x35be1bBe200AEC23cAE358a3cb18B005934f06De"// "0xB412B77983f143E467676bfaeA44f92d348c487e";
+export const BLACKJACK: `0x${string}` = "0x5A00E0Ed2b2317fA2946Cb84cc93749c5909824f"// "0xB412B77983f143E467676bfaeA44f92d348c487e";
 export const UNIVERSAL_SANDBOX: `0x${string}` = "0x244f5f7156Dcfc1eF0B214f91D1093741A6137dC";
