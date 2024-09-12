@@ -45,8 +45,8 @@ contract Blackjack {
     Game public currentGame;
     uint256 private nonce;
 
-    IERC721 public immutable cardFidContract;
-    mapping(uint8 => mapping(Suit => uint8)) private cardFid;
+    IERC721 public immutable CARD_FID_CONTRACT;
+    mapping(uint8 => mapping(Suit => uint256)) private cardFid;
     
     event GameStarted(uint256 gameId);
     event PlayerJoined(address player, uint256 bet);
@@ -73,7 +73,7 @@ contract Blackjack {
     uint256[] private lastWinnings;
 
     constructor(address _cardFidContract) {
-        cardFidContract = IERC721(_cardFidContract);
+        CARD_FID_CONTRACT = IERC721(_cardFidContract);
     }
 
     function joinGame() external payable {
@@ -384,14 +384,14 @@ contract Blackjack {
         );
     }
 
-    function updateCardFid(uint256 tokenId, uint8 fid) external {
-        require(cardFidContract.ownerOf(tokenId) == msg.sender, "Not the owner of the token");
+    function updateCardFid(uint256 tokenId, uint256 fid) external {
+        require(CARD_FID_CONTRACT.ownerOf(tokenId) == msg.sender, "Not the owner of the token");
         uint8 suit = uint8(tokenId / 13);
         uint8 rank = uint8(tokenId % 13) + 1;
         cardFid[rank][Suit(suit)] = fid;
     }
 
-    function getCardFid(uint8 rank, Suit suit) public view returns (uint8) {
+    function getCardFid(uint8 rank, Suit suit) public view returns (uint256) {
         return cardFid[rank][suit];
     }
 
