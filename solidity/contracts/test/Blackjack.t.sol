@@ -22,7 +22,7 @@ contract BlackJackTest is Test {
         vm.deal(address(blackjack), 10 ether);
     }
 
-    function testInitialState() public {
+    function testInitialState() public view {
         Blackjack.GameState memory state = blackjack.getGameState();
 
         assertEq(state.playerAddresses.length, 0);
@@ -58,6 +58,7 @@ contract BlackJackTest is Test {
         vm.prank(player2);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         Blackjack.GameState memory state = blackjack.getGameState();
@@ -71,6 +72,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);
@@ -84,6 +86,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);
@@ -97,6 +100,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         // Force player to bust by hitting multiple times
@@ -125,6 +129,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);
@@ -142,6 +147,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         // Wait for the timeout period
@@ -183,6 +189,7 @@ contract BlackJackTest is Test {
         vm.prank(player3);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         // Manipulate hands using vm.store
@@ -241,6 +248,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);
@@ -273,6 +281,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);
@@ -291,6 +300,7 @@ contract BlackJackTest is Test {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
 
+        vm.prank(player1);
         blackjack.startDealing();
 
         vm.prank(player1);

@@ -8,6 +8,7 @@ import { type FC,useState } from "react";
 import { useCallback } from 'react';
 import { baseSepolia } from "wagmi/chains";
 
+import TransactionWrapper from '~/components/utils/TransactionWrapper';
 import { abi as blackjackAbi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
 
@@ -18,7 +19,7 @@ type Props = {
   value?: bigint;
   onActionSuccess?: () => void;
 }
-export const Action: FC<Props> = ({ btnLabel, functionName, args, onActionSuccess }) => {
+export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActionSuccess }) => {
   const [key, setKey] = useState<number>(0);
   const handleOnStatus = useCallback((status: LifeCycleStatus) => {
     console.log('LifecycleStatus', status);
@@ -38,25 +39,38 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, onActionSucces
   }, [onActionSuccess]);
 
   return (
-    <Transaction
-      key={key}
-      chainId={baseSepolia.id}
-      contracts={[{
-        address: BLACKJACK,
-        abi: blackjackAbi,
-        functionName,
-        args,
-      }]}
-      onStatus={handleOnStatus}
-    >
-      <TransactionButton text={btnLabel} />
-      <TransactionSponsor />
-      <TransactionToast>
-        <TransactionToastIcon />
-        <TransactionToastLabel />
-        <TransactionToastAction />
-      </TransactionToast>
-    </Transaction>
+    <>
+      <TransactionWrapper
+        contracts={[{
+          address: BLACKJACK,
+          abi: blackjackAbi,
+          functionName,
+          args,
+        }]}
+        value={value}
+        buttonText={`${functionName} ($)`}
+        onSuccess={() => console.log('transaction success')}
+      />
+      <Transaction
+        key={key}
+        chainId={baseSepolia.id}
+        contracts={[{
+          address: BLACKJACK,
+          abi: blackjackAbi,
+          functionName,
+          args,
+        }]}
+        onStatus={handleOnStatus}
+      >
+        <TransactionButton text={btnLabel} />
+        <TransactionSponsor />
+        <TransactionToast>
+          <TransactionToastIcon />
+          <TransactionToastLabel />
+          <TransactionToastAction />
+        </TransactionToast>
+      </Transaction>
+    </>
   );
 };
 

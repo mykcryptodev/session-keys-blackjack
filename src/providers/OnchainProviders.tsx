@@ -10,6 +10,7 @@ import {
   walletConnectWallet,
 } from '@rainbow-me/rainbowkit/wallets';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Buffer } from "buffer";
 import { type FC, useEffect, useState } from 'react';
 import { createConfig, http,WagmiProvider } from 'wagmi';
 
@@ -18,6 +19,9 @@ import { env } from '~/env';
 
 import '@coinbase/onchainkit/styles.css';
 import '@rainbow-me/rainbowkit/styles.css';
+import PermissionsProvider from '~/contexts/PermissionsContext';
+
+globalThis.Buffer = Buffer;
 
 const queryClient = new QueryClient();
  
@@ -61,7 +65,6 @@ type Props = {
 }
 
 const OnchainProviders: FC<Props> = ({ children }) => {
-
   const [isMounted, setIsMounted] = useState<boolean>(false);
   useEffect(() => {
     setIsMounted(true);
@@ -79,7 +82,9 @@ const OnchainProviders: FC<Props> = ({ children }) => {
           schemaId={EAS_SCHEMA_ID}
         >
           <RainbowKitProvider modalSize="compact">
-            {children}
+            <PermissionsProvider>
+              {children}
+            </PermissionsProvider>
           </RainbowKitProvider>
         </OnchainKitProvider>
       </QueryClientProvider>

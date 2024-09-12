@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {PermissionCallable} from "./PermissionCallable.sol";
 
-contract Blackjack {
+contract Blackjack is PermissionCallable {
     // New enum for card suits
     enum Suit {
         Hearts,
@@ -131,6 +132,16 @@ contract Blackjack {
         if (currentGame.isActive) revert CardsAlreadyDealt();
         if (currentGame.playerCount == 0) revert NoPlayersInGame();
         if (currentGame.dealerHandSize != 0) revert CardsAlreadyDealt();
+
+        // user must be a player in the game
+        bool isPlayer = false;
+        for (uint8 i = 0; i < currentGame.playerCount; i++) {
+            if (currentGame.players[i].addr == msg.sender) {
+                isPlayer = true;
+                break;
+            }
+        }
+        if (!isPlayer) revert NotPlayerTurn();
 
         currentGame.isActive = true;
         dealCards();
@@ -404,6 +415,10 @@ contract Blackjack {
 
     function getCardFid(uint8 rank, Suit suit) public view returns (uint256) {
         return cardFid[rank][suit];
+    }
+
+    function supportsPermissionedCallSelector(bytes4 /*selector*/) public pure override returns (bool) {
+        return true;
     }
 
     // withdraw to address

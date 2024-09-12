@@ -1,10 +1,12 @@
 import { type FC } from "react";
-import { parseEther } from "viem";
+import { type ContractFunctionParameters, parseEther } from "viem";
 import { useWriteContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
-import { abi as blackjackAbi } from "~/constants/abi/blackjack";
+import { abi, abi as blackjackAbi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
+
+import TransactionWrapper from "../utils/TransactionWrapper";
 
 type Props = {
   onGameJoined?: () => void;
@@ -29,19 +31,37 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
     }
   };
 
+  const contracts: ContractFunctionParameters[] = [
+    {
+      address: BLACKJACK,
+      abi,
+      functionName: 'joinGame',
+      args: [],
+    },
+  ];
+
   return (
-    <button
-      onClick={() => {
-        void handleJoinGame();
-      }}
-      disabled={isPending}
-      className="btn btn-primary"
-    >
-      {isPending && (
-        <div className="loading loading-spinner" />
-      )}
-      Place Bet
-    </button>
+    <>
+      <button
+        onClick={() => {
+          void handleJoinGame();
+        }}
+        disabled={isPending}
+        className="btn btn-primary"
+      >
+        {isPending && (
+          <div className="loading loading-spinner" />
+        )}
+        Place Bet 1
+      </button>
+      <TransactionWrapper
+        contracts={contracts}
+        buttonText="Place Bet"
+        value={parseEther('0.0000001')}
+        onSuccess={() => console.log('transaction success')}
+      />
+    </>
+
   );
 };
 
