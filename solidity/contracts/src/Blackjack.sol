@@ -68,6 +68,7 @@ contract Blackjack {
     error MaxPlayersReached();
     error NotAllPlayersHaveActed();
     error DealerHasNotPlayed();
+    error PlayerAlreadyJoined();
 
     address[] private lastWinners;
     uint256[] private lastWinnings;
@@ -80,6 +81,12 @@ contract Blackjack {
         if (currentGame.isActive) revert GameInProgress();
         if (msg.value < MIN_BET || msg.value > MAX_BET) revert BetOutOfRange();
         if (currentGame.playerCount >= MAX_PLAYERS) revert MaxPlayersReached();
+        // Check if the player has already joined the game
+        for (uint8 i = 0; i < currentGame.playerCount; i++) {
+            if (currentGame.players[i].addr == msg.sender) {
+                revert PlayerAlreadyJoined();
+            }
+        }
 
         if (currentGame.playerCount == MAX_PLAYERS - 1) {
             currentGame.isActive = true;

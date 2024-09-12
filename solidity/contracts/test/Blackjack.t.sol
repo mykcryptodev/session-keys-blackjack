@@ -63,6 +63,15 @@ contract BlackJackTest is Test {
         assertEq(playerBets[0], 0.1 ether);
     }
 
+    function testCannotJoinTwice() public {
+        vm.prank(player1);
+        blackjack.joinGame{value: 0.1 ether}();
+
+        vm.prank(player1);
+        vm.expectRevert(Blackjack.PlayerAlreadyJoined.selector);
+        blackjack.joinGame{value: 0.1 ether}();
+    }
+
     function testDealCards() public {
         vm.prank(player1);
         blackjack.joinGame{value: 0.1 ether}();
