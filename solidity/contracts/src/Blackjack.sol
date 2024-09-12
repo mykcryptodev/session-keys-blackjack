@@ -271,6 +271,9 @@ contract Blackjack is PermissionCallable {
 
     // Rename the existing private playDealer function to _playDealer
     function _playDealer() private {
+        // Check if the dealer has already played
+        if (currentGame.dealerHasPlayed) revert NotPlayerTurn();
+
         Card memory secondCard = drawCard();
         currentGame.dealerHand[currentGame.dealerHandSize] = secondCard;
         currentGame.dealerHandSize++;
@@ -287,8 +290,9 @@ contract Blackjack is PermissionCallable {
 
         // Set the dealerHasPlayed flag to true
         currentGame.dealerHasPlayed = true;
+        nextPlayer();
         
-        // if dealer busts, they never stand
+        // Check if dealer busts
         if (dealerValue > 21) {
             emit DealerAction("bust", 0);
         } else {
