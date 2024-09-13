@@ -1,4 +1,5 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
+import Image from "next/image";
 import { type FC, useEffect, useState } from "react";
 import { type Hex, isAddressEqual, zeroAddress } from "viem";
 import { useReadContract } from "wagmi";
@@ -102,6 +103,15 @@ export const Hand: FC<Props> = ({
               </span>
             </div>
           ))}
+          {handValues.length < 2 && (
+            <Image
+              src="/images/logo.png"
+              alt="Card back"
+              width={80}
+              height={140}
+              className="w-32 mt-1 -mx-3"
+            />
+          )}
           {handValue ? (
             <div className="font-bold">
               {handValue.toString()}
