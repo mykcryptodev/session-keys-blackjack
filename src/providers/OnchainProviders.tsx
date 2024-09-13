@@ -1,3 +1,4 @@
+//@ts-ignore
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import {
   connectorsForWallets,
@@ -15,11 +16,11 @@ import { type FC, useEffect, useState } from 'react';
 import { createConfig, http,WagmiProvider } from 'wagmi';
 
 import { APP_NAME, DEFAULT_CHAIN, EAS_SCHEMA_ID, SUPPORTED_CHAINS } from '~/constants';
+import PermissionsProvider from '~/contexts/PermissionsContext';
 import { env } from '~/env';
 
 import '@coinbase/onchainkit/styles.css';
 import '@rainbow-me/rainbowkit/styles.css';
-import PermissionsProvider from '~/contexts/PermissionsContext';
 
 globalThis.Buffer = Buffer;
 

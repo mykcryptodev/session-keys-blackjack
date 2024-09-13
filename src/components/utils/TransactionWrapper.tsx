@@ -1,4 +1,4 @@
-'use client';
+// @ts-ignore
 import { useState } from 'react';
 import { type ContractFunctionParameters, encodeFunctionData, type Hex } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
@@ -11,6 +11,7 @@ interface TransactionWrapperProps {
   value?: bigint;
   contracts: ContractFunctionParameters[];
   buttonText: string;
+  args?: unknown[];
   onSuccess?: () => void; // Add this line
 }
 
@@ -76,7 +77,7 @@ export default function TransactionWrapper({ value, contracts, buttonText, args,
 
 
 function encodeContractCall(contract: ContractFunctionParameters, value: bigint)  {
-  console.log({ contract });
+  console.log({ contract, value: value.toString() });
   return {
     to: contract.address,
     data: encodeFunctionData({

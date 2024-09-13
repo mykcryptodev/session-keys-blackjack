@@ -34,7 +34,7 @@ export const GrantPermissions: FC = () => {
                 {
                   type: "native-token-recurring-allowance",
                   data: {
-                    allowance: parseEther("0.1"),
+                    allowance: parseEther("1"),
                     start: Math.floor(Date.now() / 1000),
                     period: 86400,
                   },
