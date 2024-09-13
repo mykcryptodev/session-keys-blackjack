@@ -1,5 +1,5 @@
-import { type FC, useEffect, useState } from 'react';
-import { type Hex, zeroAddress } from 'viem';
+import { type FC, useEffect } from 'react';
+import { zeroAddress } from 'viem';
 import { useReadContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
@@ -12,11 +12,6 @@ import { abi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
 
 export const Blackjack: FC = () => {
-  const [players, setPlayers] = useState<Hex[]>([]);
-  const [currentPlayerIndex, setCurrentPlayerIndex] = useState<number>(0);
-  const [dealerHandValues, setDealerHandValues] = useState<readonly number[]>([]);
-  const [dealerHandSuits, setDealerHandSuits] = useState<readonly number[]>([]);
-
   const { 
     data,
     refetch,
@@ -26,20 +21,6 @@ export const Blackjack: FC = () => {
     abi,
     functionName: 'getGameState',
   });
-  console.log({data});
-
-  useEffect(() => {
-    if (data?.playerAddresses) {
-      setPlayers(data?.playerAddresses.map((player) => player).concat(zeroAddress));
-    }
-    if (data?.currentPlayerIndex) {
-      setCurrentPlayerIndex(data.currentPlayerIndex);
-    }
-    if (data?.dealerHandValues && data?.dealerHandSuits) {
-      setDealerHandValues(data.dealerHandValues);
-      setDealerHandSuits(data.dealerHandSuits);
-    }
-  }, [data]);
 
   // every 5 seconds, refetch the game state
   useEffect(() => {
@@ -49,8 +30,7 @@ export const Blackjack: FC = () => {
     return () => clearInterval(interval);
   }, [refetch]);
 
-  console.log({ players });
-
+  if (!data) return null;
   return (
     <div className="flex flex-col gap-2">
       <Watch onEvent={() => void refetch()} />
@@ -61,14 +41,14 @@ export const Blackjack: FC = () => {
       <Action btnLabel="Hit" functionName="hit" onActionSuccess={refetch} />
       <Action btnLabel="Play Dealer" functionName="playDealer" onActionSuccess={refetch} />
       <Action btnLabel="Settle Game" functionName="settleGame" onActionSuccess={refetch} />
-      {players.map((player, index) => (
+      {data.playerAddresses.concat(zeroAddress).map((player, index) => (
         <Hand 
           key={player} 
           playerIndex={index} 
-          isCurrentPlayer={currentPlayerIndex}
-          isDealerHand={index === players.length - 1}
-          dealerHandValues={dealerHandValues}
-          dealerHandSuits={dealerHandSuits}
+          isCurrentPlayer={data.currentPlayerIndex}
+          isDealerHand={index === data.playerAddresses.length}
+          dealerHandValues={data.dealerHandValues}
+          dealerHandSuits={data.dealerHandSuits}
         />
       ))}
     </div>
