@@ -1,7 +1,6 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
 import type { LifeCycleStatus } from '@coinbase/onchainkit/transaction'; 
 import { Transaction, TransactionButton, TransactionSponsor, TransactionToast, TransactionToastAction, TransactionToastIcon, TransactionToastLabel } from "@coinbase/onchainkit/transaction";
-import { writeContract } from "@wagmi/core";
 import type { NextPage } from "next";
 import { type FC, useCallback, useEffect,useState } from "react";
 import { erc721Abi, isAddressEqual } from "viem";
@@ -47,6 +46,7 @@ export const Cards: NextPage = () => {
     const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
     useEffect(() => {
+      // @ts-expect-error - TS doesn't like us
       const card = tokenIdToCard[tokenId];
       if (card) {
         const foundFid = findFid(card.value, card.suit);
@@ -60,10 +60,8 @@ export const Cards: NextPage = () => {
     if (!ownerAddress) return null;
     return (
       <div className="flex max-w-xs my-8 items-center gap-2 w-full">
-        <Card
-          value={tokenIdToCard[tokenId]?.value}
-          suit={tokenIdToCard[tokenId]?.suit}
-        />
+        {/* @ts-expect-error - TS doesn't like us */}
+        <Card value={tokenIdToCard[tokenId]?.value} suit={tokenIdToCard[tokenId]?.suit} />
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <Avatar address={ownerAddress} chain={base} />
