@@ -55,8 +55,8 @@ contract Blackjack is PermissionCallable {
     }
 
     uint256 public constant MIN_BET = 0.0000001 ether;
-    uint256 public constant MAX_BET = 2 ether;
-    uint256 public constant ACTION_TIMEOUT = 5 minutes;
+    uint256 public constant MAX_BET = 0.001 ether;
+    uint256 public constant ACTION_TIMEOUT = 1 minutes;
     uint8 public constant MAX_PLAYERS = 6;
 
     Game public currentGame;
