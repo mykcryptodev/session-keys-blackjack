@@ -22,7 +22,7 @@ const OnchainProviders = dynamic(
 const pageTitle = `Play ${APP_NAME}`;
 const pageDescription = APP_DESCRIPTION;
 const pageUrl = APP_URL;
-const imageUrl = `${APP_URL}/images/og.gif`;
+const imageUrl = `${APP_URL}/images/farcard.png`;
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
