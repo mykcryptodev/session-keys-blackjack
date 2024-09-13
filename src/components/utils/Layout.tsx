@@ -27,6 +27,9 @@ export const Layout: FC<Props> = ({ children }) => {
             </h1>
           </Link>
           <div className="flex items-center gap-2">
+            <Link href="/cards" className="btn btn-ghost">
+              Customize Cards
+            </Link>
             <Wallet withWalletAggregator />
           </div>
         </div>

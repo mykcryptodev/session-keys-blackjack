@@ -2,6 +2,7 @@ import { Avatar, Name } from "@coinbase/onchainkit/identity";
 import type { LifeCycleStatus } from '@coinbase/onchainkit/transaction'; 
 import { Transaction, TransactionButton, TransactionSponsor, TransactionToast, TransactionToastAction, TransactionToastIcon, TransactionToastLabel } from "@coinbase/onchainkit/transaction";
 import type { NextPage } from "next";
+import Link from "next/link";
 import { type FC, useCallback, useEffect,useState } from "react";
 import { erc721Abi, isAddressEqual } from "viem";
 import { base } from "viem/chains";
@@ -102,6 +103,9 @@ export const Cards: NextPage = () => {
 
   return (
     <div>
+      <div className="py-2">This page is a work in progress</div>
+      <div className="py-2">The idea is that users can own an NFT that grants them permission to set the farcaster ID of the card NFT that they own</div>
+      <div className="py-2">Buy a test NFT from <Link className="underline" href="https://testnets.opensea.io/collection/cardfid-1" rel="noreferrer">OpenSea</Link> and update the corresponding FID to whichever farcaster user you want to show up on the card!</div>
       {Object.keys(tokenIdToCard).map((tokenId) => {
         return (
           <NftCard 
