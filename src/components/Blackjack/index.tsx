@@ -59,7 +59,7 @@ export const Blackjack: FC = () => {
         <Action btnLabel="Deal" loadingLabel="Dealing" functionName="startDealing" onActionSuccess={refetch} />
       )}
       {userIsPlayingInGame && data.isActive && data.currentPlayerIndex === userPlayerIndex && (
-        <div className="flex w-full items-start gap-2" key={data.lastActionTimestamp}>
+        <div className="flex sm:flex-row flex-col w-full items-start sm:gap-2 gap-0" key={data.lastActionTimestamp}>
           <Action btnLabel="Stand" loadingLabel="Standing" functionName="stand" onActionSuccess={refetch} />
           <Action btnLabel="Hit" loadingLabel="Hitting" functionName="hit" onActionSuccess={refetch} />
         </div>
