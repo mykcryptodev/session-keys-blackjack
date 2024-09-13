@@ -19,6 +19,7 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
   const { writeContractAsync, isPending } = useWriteContract();
   const [amount, setAmount] = useState<string>(MIN_BET);
   const [isValidAmount, setIsValidAmount] = useState(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const handleJoinGame = async () => {
     try {
@@ -31,6 +32,7 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
         value: parseEther(amount),
       });
       console.log({tx});
+      setIsLoading(true);
       onGameJoined?.();
     } catch (e) {
       console.log({e});
@@ -102,7 +104,7 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
           buttonText="Place Bet 🔑"
           value={parseEther(amount || '0')}
           isDisabled={isPending || !isValidAmount}
-          onSuccess={() => console.log('transaction success')}
+          onSuccess={() => setIsLoading(true)}
           className="w-1/3"
         />
         <button
@@ -118,6 +120,12 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
           Place Bet ✍️
         </button>
       </div>
+      {isLoading && (
+        <div className="flex items-end justify-center w-full gap-0.5">
+          <span className="font-bold">Placing Bet</span>
+          <span className="loading loading-dots loading-xs"></span>
+        </div>
+      )}
     </div>
   );
 };

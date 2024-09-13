@@ -91,7 +91,9 @@ export const Hand: FC<Props> = ({
                 value={value}
                 suit={handSuits[index]!}
               />
-              {`${value}${getSuitSymbol(handSuits[index])}`}
+              <span className="sr-only">
+                {`${value}${getSuitSymbol(handSuits[index])}`}
+              </span>
             </div>
           ))}
           {handValue && (
