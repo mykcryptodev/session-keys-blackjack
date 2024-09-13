@@ -12,9 +12,10 @@ interface TransactionWrapperProps {
   buttonText: string;
   onSuccess?: () => void;
   className?: string;
+  isDisabled?: boolean;
 }
 
-export default function TransactionWrapper({ value, contracts, className, buttonText, onSuccess }: TransactionWrapperProps) {
+export default function TransactionWrapper({ value, contracts, className, isDisabled, buttonText, onSuccess }: TransactionWrapperProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { sendCallsAsync } = useSendCalls();
   const { permissionsContext, credential } = usePermissions();
@@ -30,8 +31,6 @@ export default function TransactionWrapper({ value, contracts, className, button
         capabilities: {},
         signatureOverride: {},
       };
-
-      console.log({ permissionsContext, credential, transactionOptions });
 
       // If we have permissionsContext and credential, use them for session key transaction
       if (permissionsContext && credential) {
@@ -64,7 +63,7 @@ export default function TransactionWrapper({ value, contracts, className, button
   return (
     <button
       onClick={handleTransaction}
-      disabled={isLoading}
+      disabled={isLoading || isDisabled}
       className={`btn ${className}`}
     >
       {isLoading && (
