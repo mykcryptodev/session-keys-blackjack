@@ -73,6 +73,7 @@ export const Blackjack: FC = () => {
       {data.playerAddresses.concat(zeroAddress).map((player, index) => (
         <Hand 
           key={player} 
+          numPlayers={data.playerAddresses.length}
           playerIndex={index} 
           isCurrentPlayer={data.currentPlayerIndex}
           isDealerHand={index === data.playerAddresses.length}
