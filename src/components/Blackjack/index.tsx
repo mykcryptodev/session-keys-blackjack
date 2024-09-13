@@ -64,7 +64,7 @@ export const Blackjack: FC = () => {
           <Action btnLabel="Hit" loadingLabel="Hitting" functionName="hit" onActionSuccess={refetch} />
         </div>
       )}
-      {dealerIsCurrentPlayer && data.playerAddresses.length && (
+      {dealerIsCurrentPlayer && data.playerAddresses.length > 0 && (
         <Action btnLabel="Play Dealer" loadingLabel="Playing Dealer" functionName="playDealer" onActionSuccess={refetch} />
       )}
       {data.isActive && data.dealerHasPlayed && (

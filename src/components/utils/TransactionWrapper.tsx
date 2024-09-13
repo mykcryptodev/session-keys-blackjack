@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { type ContractFunctionParameters, encodeFunctionData, type Hex } from 'viem';
+import { type ContractFunctionParameters, encodeFunctionData } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
 import { useSendCalls } from 'wagmi/experimental';
 import { signWithCredential } from 'webauthn-p256';

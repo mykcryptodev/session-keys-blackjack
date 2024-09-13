@@ -1,6 +1,6 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
 import { type FC, useEffect, useState } from "react";
-import { type Hex, zeroAddress } from "viem";
+import { type Hex, isAddressEqual, zeroAddress } from "viem";
 import { useReadContract } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 
@@ -11,6 +11,7 @@ import { BLACKJACK } from "~/constants/addresses";
 type Props = {
   playerIndex: number;
   isCurrentPlayer: number;
+  numPlayers: number;
   isDealerHand: boolean;
   dealerHandValues?: readonly number[];
   dealerHandSuits?: readonly number[];
@@ -22,6 +23,7 @@ export const Hand: FC<Props> = ({
   isDealerHand,
   dealerHandValues,
   dealerHandSuits,
+  numPlayers,
 }) => {
   const [playerAddress, setPlayerAddress] = useState<Hex>();
   const [handValues, setHandValues] = useState<readonly number[]>([]);
@@ -79,8 +81,12 @@ export const Hand: FC<Props> = ({
       <div className="flex flex-col gap-2">
         <div className="flex flex-row gap-2 items-center">
           <Avatar address={playerAddress} chain={base} />
-          <Name address={playerAddress} chain={base}/>
-          {isCurrentPlayer === playerIndex && (
+          {isAddressEqual(playerAddress, zeroAddress) ? (
+            <div className="font-bold">Dealer</div>
+          ) : (
+            <Name address={playerAddress} chain={base}/>
+          )}
+          {isCurrentPlayer === playerIndex && numPlayers > 0 && (
             <div className="badge">Active</div>
           )}
         </div>
@@ -96,11 +102,11 @@ export const Hand: FC<Props> = ({
               </span>
             </div>
           ))}
-          {handValue && (
+          {handValue ? (
             <div className="font-bold">
               {handValue.toString()}
             </div>
-          )}
+          ) : (null)}
         </div>
       </div>
     );

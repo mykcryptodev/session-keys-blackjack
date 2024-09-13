@@ -79,14 +79,26 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex w-full items-start gap-2">
-        <div className="relative w-full">
+      <div className="flex sm:flex-row flex-col w-full items-start gap-2">
+        <div className="relative grow sm:w-fit w-full">
+          <button 
+            className="btn btn-outline btn-xs absolute left-3 top-3"
+            onClick={() => setAmount(MIN_BET)}
+          >
+            Min
+          </button>
+          <button 
+            className="btn btn-outline btn-xs absolute left-14 top-3"
+            onClick={() => setAmount(MAX_BET)}
+          >
+            Max
+          </button>
           <input 
             type="text"
             inputMode="decimal"
             value={amount}
             onChange={(e) => handleAmountChange(e.target.value)}
-            className="input input-bordered text-right pr-14 w-full"
+            className="input input-bordered text-right pr-12 w-full"
           />
           <Image 
             src="https://dynamic-assets.coinbase.com/dbb4b4983bde81309ddab83eb598358eb44375b930b94687ebe38bc22e52c3b2125258ffb8477a5ef22e33d6bd72e32a506c391caa13af64c00e46613c3e5806/asset_icons/4113b082d21cc5fab17fc8f2d19fb996165bcce635e6900f7fc2d57c4ef33ae9.png"
@@ -105,14 +117,14 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
           value={parseEther(amount || '0')}
           isDisabled={isPending || !isValidAmount}
           onSuccess={() => setIsLoading(true)}
-          className="w-1/3"
+          className="grow sm:w-fit w-full"
         />
         <button
           onClick={() => {
             void handleJoinGame();
           }}
           disabled={isPending || !isValidAmount}
-          className="btn btn-primary w-1/3"
+          className="btn btn-primary grow sm:w-fit w-full"
         >
           {isPending && (
             <div className="loading loading-spinner" />
