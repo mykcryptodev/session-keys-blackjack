@@ -47,8 +47,10 @@ export const Cards: NextPage = () => {
 
     useEffect(() => {
       // @ts-expect-error - TS doesn't like us
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const card = tokenIdToCard[tokenId];
       if (card) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-member-access
         const foundFid = findFid(card.value, card.suit);
         setFid(foundFid);
       }
@@ -60,8 +62,8 @@ export const Cards: NextPage = () => {
     if (!ownerAddress) return null;
     return (
       <div className="flex max-w-xs my-8 items-center gap-2 w-full">
-        {/* @ts-expect-error - TS doesn't like us */}
-        <Card value={tokenIdToCard[tokenId]?.value} suit={tokenIdToCard[tokenId]?.suit} />
+        {/* eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */}
+        <Card value={tokenIdToCard[tokenId as unknown as number]!.value} suit={tokenIdToCard[tokenId as unknown as number]!.suit} />
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <Avatar address={ownerAddress} chain={base} />
