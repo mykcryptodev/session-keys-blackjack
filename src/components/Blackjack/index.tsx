@@ -70,6 +70,7 @@ export const Blackjack: FC = () => {
       {data.isActive && data.dealerHasPlayed && (
         <Action btnLabel="Settle Game" loadingLabel="Settling Game" functionName="settleGame" onActionSuccess={refetch} />
       )}
+      <div className="py-2" />
       {data.playerAddresses.concat(zeroAddress).map((player, index) => (
         <Hand 
           key={player} 

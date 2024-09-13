@@ -18,7 +18,7 @@ export const Layout: FC<Props> = ({ children }) => {
 
   return (
     <div className="flex flex-col gap-2 max-w-3xl mx-auto px-2">
-      <div className="flex flex-col gap-2 w-full max-w-7xl mx-auto my-4 mb-20">
+      <div className="flex flex-col gap-2 w-full max-w-7xl mx-auto my-4 sm:mb-20 mb-4">
         <div className="flex items-center justify-between">
           <Link href="/">
             <h1 className="text-2xl font-bold flex items-center gap-2">

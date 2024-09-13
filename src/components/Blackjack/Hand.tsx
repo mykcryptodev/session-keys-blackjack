@@ -90,6 +90,11 @@ export const Hand: FC<Props> = ({
           {isCurrentPlayer === playerIndex && numPlayers > 0 && (
             <div className="badge">Active</div>
           )}
+          {handValue ? (
+            <div className="font-bold">
+              {handValue.toString()}
+            </div>
+          ) : (null)}
         </div>
         <div className="flex flex-row gap-2">
           {handValues.filter(v => v).map((value, index) => (
@@ -103,7 +108,7 @@ export const Hand: FC<Props> = ({
               </span>
             </div>
           ))}
-          {handValues.length < 2 && (
+          {handValues.length === 1 && (
             <Image
               src="/images/logo.png"
               alt="Card back"
@@ -112,11 +117,6 @@ export const Hand: FC<Props> = ({
               className="w-32 mt-1 -mx-3"
             />
           )}
-          {handValue ? (
-            <div className="font-bold">
-              {handValue.toString()}
-            </div>
-          ) : (null)}
         </div>
       </div>
     );

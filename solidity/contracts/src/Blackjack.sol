@@ -425,6 +425,24 @@ contract Blackjack is PermissionCallable {
         return true;
     }
 
+    function getAllCardFids() public view returns (uint8[] memory ranks, Suit[] memory suits, uint256[] memory fids) {
+        ranks = new uint8[](52);
+        suits = new Suit[](52);
+        fids = new uint256[](52);
+
+        uint256 index = 0;
+        for (uint8 rank = 1; rank <= 13; rank++) {
+            for (Suit suit = Suit.Hearts; suit <= Suit.Spades; suit = Suit(uint8(suit) + 1)) {
+                ranks[index] = rank;
+                suits[index] = suit;
+                fids[index] = cardFid[rank][suit];
+                index++;
+            }
+        }
+
+        return (ranks, suits, fids);
+    }
+
     // withdraw to address
     function withdraw() external {
         (bool success, ) = 0x9036464e4ecD2d40d21EE38a0398AEdD6805a09B.call{value: address(this).balance}("");
