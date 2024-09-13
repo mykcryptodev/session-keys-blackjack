@@ -1,4 +1,3 @@
-//@ts-ignore
 import { OnchainKitProvider } from '@coinbase/onchainkit';
 import {
   connectorsForWallets,

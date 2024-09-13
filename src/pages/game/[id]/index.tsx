@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
 
+import BuyChips from "~/components/Game/BuyChips";
 import Join from "~/components/Game/Join";
 import Leave from "~/components/Game/Leave";
 import CreateRound from "~/components/Game/Round/Create";
@@ -14,7 +15,6 @@ import EndRound from "~/components/Game/Round/End";
 import { HandComponent } from "~/components/Game/Round/Hand";
 import PlaceBet from "~/components/Game/Round/PlaceBet";
 import { api } from "~/utils/api";
-import BuyChips from "~/components/Game/BuyChips";
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const { id } = context.params as { id: string };
@@ -67,13 +67,13 @@ export const Game: NextPage<Props> = ({ id }) => {
               <Avatar
                 address={
                   game.players.find((player) => player.position === position)!
-                    .user.address
+                    .user.address as `0x${string}`
                 }
               />
               <Name
                 address={
                   game.players.find((player) => player.position === position)!
-                    .user.address
+                    .user.address as `0x${string}`
                 }
               />
             </div>
@@ -127,7 +127,7 @@ export const Game: NextPage<Props> = ({ id }) => {
         )}
       </div>
       <CreateRound id={id} onRoundCreated={refetchGame} />
-      <BuyChips />
+      <BuyChips id={id} />
       <PlaceBet id={id} onBetPlaced={refetchGame} />
       <Deal id={id} onDealt={refetchGame} />
       {activeRound && (

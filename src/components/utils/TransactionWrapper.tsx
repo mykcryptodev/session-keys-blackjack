@@ -1,4 +1,3 @@
-// @ts-ignore
 import { useState } from 'react';
 import { type ContractFunctionParameters, encodeFunctionData, type Hex } from 'viem';
 import { baseSepolia } from 'wagmi/chains';
@@ -49,6 +48,7 @@ export default function TransactionWrapper({ value, contracts, className, button
         transactionOptions.signatureOverride = signWithCredential(credential);
       }
 
+      // @ts-expect-error - sendCallsAsync does not like the tx options
       const result = await sendCallsAsync(transactionOptions);
       console.log('Transaction successful', result);
       if (onSuccess) {
