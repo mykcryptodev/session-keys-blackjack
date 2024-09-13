@@ -14,17 +14,18 @@ import { BLACKJACK } from "~/constants/addresses";
 
 type Props = {
   btnLabel: string;
+  loadingLabel?: string;
   functionName: string;
   args?: unknown[];
   value?: bigint;
   onActionSuccess?: () => void;
 }
-export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActionSuccess }) => {
+export const Action: FC<Props> = ({ btnLabel, loadingLabel, functionName, args, value, onActionSuccess }) => {
   const [key, setKey] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const handleOnStatus = useCallback((status: LifeCycleStatus) => {
-    console.log('LifecycleStatus', status);
     if (status.statusName === 'success') {
-      console.log('Transaction success');
+      setIsLoading(true);
       onActionSuccess?.();
       setTimeout(() => {
         setKey((prev) => prev + 1);
@@ -39,38 +40,46 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActio
   }, [onActionSuccess]);
 
   return (
-    <div className="flex w-full items-center gap-2">
-      <TransactionWrapper
-        contracts={[{
-          address: BLACKJACK,
-          abi: blackjackAbi,
-          functionName,
-          args,
-        }]}
-        value={value}
-        buttonText={`${btnLabel} 🔑`}
-        onSuccess={() => console.log('transaction success')}
-        className="mt-4 w-1/2 text-base"
-      />
-      <Transaction
-        key={key}
-        chainId={baseSepolia.id}
-        contracts={[{
-          address: BLACKJACK,
-          abi: blackjackAbi,
-          functionName,
-          args,
-        }]}
-        onStatus={handleOnStatus}
-      >
-        <TransactionButton text={`${btnLabel} ✍️`} />
-        <TransactionSponsor />
-        <TransactionToast>
-          <TransactionToastIcon />
-          <TransactionToastLabel />
-          <TransactionToastAction />
-        </TransactionToast>
-      </Transaction>
+    <div className="flex flex-col w-full gap-2">
+      <div className="flex w-full items-center gap-2">
+        <TransactionWrapper
+          contracts={[{
+            address: BLACKJACK,
+            abi: blackjackAbi,
+            functionName,
+            args,
+          }]}
+          value={value}
+          buttonText={`${btnLabel} 🔑`}
+          className="mt-4 w-1/2 text-base"
+          onSuccess={() => setIsLoading(true)}
+        />
+        <Transaction
+          key={key}
+          chainId={baseSepolia.id}
+          contracts={[{
+            address: BLACKJACK,
+            abi: blackjackAbi,
+            functionName,
+            args,
+          }]}
+          onStatus={handleOnStatus}
+        >
+          <TransactionButton text={`${btnLabel} ✍️`} />
+          <TransactionSponsor />
+          <TransactionToast>
+            <TransactionToastIcon />
+            <TransactionToastLabel />
+            <TransactionToastAction />
+          </TransactionToast>
+        </Transaction>
+      </div>
+      {isLoading && (
+        <div className="flex items-end justify-center w-full gap-0.5">
+          <span className="font-bold">{loadingLabel ?? "Actioning"}</span>
+          <span className="loading loading-dots loading-xs"></span>
+        </div>
+      )}
     </div>
   );
 };

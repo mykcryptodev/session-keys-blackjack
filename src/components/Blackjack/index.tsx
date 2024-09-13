@@ -56,19 +56,19 @@ export const Blackjack: FC = () => {
         <Bet onGameJoined={refetch} />
       )}
       {userIsPlayingInGame && !data.isActive && (
-        <Action btnLabel="Deal" functionName="startDealing" onActionSuccess={refetch} />
+        <Action btnLabel="Deal" loadingLabel="Dealing" functionName="startDealing" onActionSuccess={refetch} />
       )}
       {userIsPlayingInGame && data.isActive && data.currentPlayerIndex === userPlayerIndex && (
-        <div className="flex w-full items-center gap-2">
-          <Action btnLabel="Stand" functionName="stand" onActionSuccess={refetch} />
-          <Action btnLabel="Hit" functionName="hit" onActionSuccess={refetch} />
+        <div className="flex w-full items-start gap-2" key={data.lastActionTimestamp}>
+          <Action btnLabel="Stand" loadingLabel="Standing" functionName="stand" onActionSuccess={refetch} />
+          <Action btnLabel="Hit" loadingLabel="Hitting" functionName="hit" onActionSuccess={refetch} />
         </div>
       )}
       {dealerIsCurrentPlayer && data.playerAddresses.length && (
-        <Action btnLabel="Play Dealer" functionName="playDealer" onActionSuccess={refetch} />
+        <Action btnLabel="Play Dealer" loadingLabel="Playing Dealer" functionName="playDealer" onActionSuccess={refetch} />
       )}
       {data.isActive && data.dealerHasPlayed && (
-        <Action btnLabel="Settle Game" functionName="settleGame" onActionSuccess={refetch} />
+        <Action btnLabel="Settle Game" loadingLabel="Settling Game" functionName="settleGame" onActionSuccess={refetch} />
       )}
       {data.playerAddresses.concat(zeroAddress).map((player, index) => (
         <Hand 

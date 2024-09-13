@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { type FC, useState, useEffect } from "react";
+import { type FC, useEffect,useState } from "react";
 import { type ContractFunctionParameters, parseEther } from "viem";
 import { useWriteContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
@@ -21,7 +21,6 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
   const [isValidAmount, setIsValidAmount] = useState(true);
 
   const handleJoinGame = async () => {
-    console.log('join game');
     try {
       const tx = await writeContractAsync({
         address: BLACKJACK,
