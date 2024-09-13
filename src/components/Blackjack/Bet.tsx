@@ -41,27 +41,27 @@ export const Bet: FC<Props> = ({ onGameJoined }) => {
   ];
 
   return (
-    <>
+    <div className="flex w-full items-center gap-2">
+      <TransactionWrapper
+        contracts={contracts}
+        buttonText="Place Bet 🔑"
+        value={parseEther('0.0000001')}
+        onSuccess={() => console.log('transaction success')}
+        className="w-1/2"
+      />
       <button
         onClick={() => {
           void handleJoinGame();
         }}
         disabled={isPending}
-        className="btn btn-primary"
+        className="btn btn-primary w-1/2"
       >
         {isPending && (
           <div className="loading loading-spinner" />
         )}
-        Place Bet 1
+        Place Bet ✍️
       </button>
-      <TransactionWrapper
-        contracts={contracts}
-        buttonText="Place Bet"
-        value={parseEther('0.0000001')}
-        onSuccess={() => console.log('transaction success')}
-      />
-    </>
-
+    </div>
   );
 };
 

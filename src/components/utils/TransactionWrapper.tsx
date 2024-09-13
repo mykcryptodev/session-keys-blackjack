@@ -11,11 +11,11 @@ interface TransactionWrapperProps {
   value?: bigint;
   contracts: ContractFunctionParameters[];
   buttonText: string;
-  args?: unknown[];
-  onSuccess?: () => void; // Add this line
+  onSuccess?: () => void;
+  className?: string;
 }
 
-export default function TransactionWrapper({ value, contracts, buttonText, args, onSuccess }: TransactionWrapperProps) {
+export default function TransactionWrapper({ value, contracts, className, buttonText, onSuccess }: TransactionWrapperProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { sendCallsAsync } = useSendCalls();
   const { permissionsContext, credential } = usePermissions();
@@ -65,7 +65,7 @@ export default function TransactionWrapper({ value, contracts, buttonText, args,
     <button
       onClick={handleTransaction}
       disabled={isLoading}
-      className="btn"
+      className={`btn ${className}`}
     >
       {isLoading && (
         <div className="loading loading-spinner" />

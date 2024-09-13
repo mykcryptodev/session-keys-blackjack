@@ -1,6 +1,6 @@
-import { type FC, useEffect } from 'react';
-import { zeroAddress } from 'viem';
-import { useReadContract } from "wagmi";
+import { type FC, useEffect, useMemo } from 'react';
+import { isAddressEqual, zeroAddress } from 'viem';
+import { useAccount, useReadContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
 import Action from "~/components/Blackjack/Action";
@@ -12,6 +12,8 @@ import { abi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
 
 export const Blackjack: FC = () => {
+  const { address } = useAccount();
+
   const { 
     data,
     refetch,
@@ -21,6 +23,21 @@ export const Blackjack: FC = () => {
     abi,
     functionName: 'getGameState',
   });
+  console.log({ data });
+
+  const userIsPlayingInGame = useMemo(() => {
+    if (!address || !data?.playerAddresses) return false;
+    return data.playerAddresses.some(playerAddress => isAddressEqual(playerAddress, address));
+  }, [address, data?.playerAddresses]);
+
+  const userPlayerIndex = useMemo(() => {
+    if (!address || !data?.playerAddresses) return -1;
+    return data.playerAddresses.findIndex(playerAddress => isAddressEqual(playerAddress, address));
+  }, [address, data?.playerAddresses]);
+
+  const dealerIsCurrentPlayer = useMemo(() => {
+    return data?.currentPlayerIndex === data?.playerAddresses.length;
+  }, [data?.currentPlayerIndex, data?.playerAddresses]);
 
   // every 5 seconds, refetch the game state
   useEffect(() => {
@@ -35,12 +52,24 @@ export const Blackjack: FC = () => {
     <div className="flex flex-col gap-2">
       <Watch onEvent={() => void refetch()} />
       <GrantPermissions />
-      <Bet onGameJoined={refetch} />
-      <Action btnLabel="Deal" functionName="startDealing" onActionSuccess={refetch} />
-      <Action btnLabel="Stand" functionName="stand" onActionSuccess={refetch} />
-      <Action btnLabel="Hit" functionName="hit" onActionSuccess={refetch} />
-      <Action btnLabel="Play Dealer" functionName="playDealer" onActionSuccess={refetch} />
-      <Action btnLabel="Settle Game" functionName="settleGame" onActionSuccess={refetch} />
+      {!userIsPlayingInGame && (
+        <Bet onGameJoined={refetch} />
+      )}
+      {userIsPlayingInGame && !data.isActive && (
+        <Action btnLabel="Deal" functionName="startDealing" onActionSuccess={refetch} />
+      )}
+      {userIsPlayingInGame && data.isActive && data.currentPlayerIndex === userPlayerIndex && (
+        <div className="flex w-full items-center gap-2">
+          <Action btnLabel="Stand" functionName="stand" onActionSuccess={refetch} />
+          <Action btnLabel="Hit" functionName="hit" onActionSuccess={refetch} />
+        </div>
+      )}
+      {dealerIsCurrentPlayer && data.playerAddresses.length && (
+        <Action btnLabel="Play Dealer" functionName="playDealer" onActionSuccess={refetch} />
+      )}
+      {data.isActive && data.dealerHasPlayed && (
+        <Action btnLabel="Settle Game" functionName="settleGame" onActionSuccess={refetch} />
+      )}
       {data.playerAddresses.concat(zeroAddress).map((player, index) => (
         <Hand 
           key={player} 

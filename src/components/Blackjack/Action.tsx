@@ -39,7 +39,7 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActio
   }, [onActionSuccess]);
 
   return (
-    <>
+    <div className="flex w-full items-center gap-2">
       <TransactionWrapper
         contracts={[{
           address: BLACKJACK,
@@ -48,8 +48,9 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActio
           args,
         }]}
         value={value}
-        buttonText={`${functionName} ($)`}
+        buttonText={`${btnLabel} 🔑`}
         onSuccess={() => console.log('transaction success')}
+        className="mt-4 w-1/2 text-base"
       />
       <Transaction
         key={key}
@@ -62,7 +63,7 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActio
         }]}
         onStatus={handleOnStatus}
       >
-        <TransactionButton text={btnLabel} />
+        <TransactionButton text={`${btnLabel} ✍️`} />
         <TransactionSponsor />
         <TransactionToast>
           <TransactionToastIcon />
@@ -70,7 +71,7 @@ export const Action: FC<Props> = ({ btnLabel, functionName, args, value, onActio
           <TransactionToastAction />
         </TransactionToast>
       </Transaction>
-    </>
+    </div>
   );
 };
 
