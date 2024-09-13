@@ -71,6 +71,6 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
 
   return (
-    <div>hello</div>
+    <div />
   )
 };

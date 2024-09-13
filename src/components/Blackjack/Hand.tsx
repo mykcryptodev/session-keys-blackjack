@@ -4,6 +4,7 @@ import { type Hex, zeroAddress } from "viem";
 import { useReadContract } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 
+import Card from "~/components/Blackjack/Card";
 import { abi as blackjackAbi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
 
@@ -86,6 +87,10 @@ export const Hand: FC<Props> = ({
         <div className="flex flex-row gap-2">
           {handValues.filter(v => v).map((value, index) => (
             <div key={index}>
+              <Card
+                value={value}
+                suit={handSuits[index]!}
+              />
               {`${value}${getSuitSymbol(handSuits[index])}`}
             </div>
           ))}

@@ -31,7 +31,7 @@ export default function TransactionWrapper({ value, contracts, className, button
         signatureOverride: {},
       };
 
-      console.log({ permissionsContext, credential });
+      console.log({ permissionsContext, credential, transactionOptions });
 
       // If we have permissionsContext and credential, use them for session key transaction
       if (permissionsContext && credential) {
