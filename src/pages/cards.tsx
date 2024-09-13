@@ -1,9 +1,12 @@
 import { Avatar, Name } from "@coinbase/onchainkit/identity";
+import type { LifeCycleStatus } from '@coinbase/onchainkit/transaction'; 
+import { Transaction, TransactionButton, TransactionSponsor, TransactionToast, TransactionToastAction, TransactionToastIcon, TransactionToastLabel } from "@coinbase/onchainkit/transaction";
+import { writeContract } from "@wagmi/core";
 import type { NextPage } from "next";
-import { type FC, useEffect,useState } from "react";
-import { erc721Abi } from "viem";
+import { type FC, useCallback, useEffect,useState } from "react";
+import { erc721Abi, isAddressEqual } from "viem";
 import { base } from "viem/chains";
-import { useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 
 import Card from "~/components/Blackjack/Card";
 import { abi } from "~/constants/abi/blackjack";
@@ -11,7 +14,8 @@ import { BLACKJACK, CARD_NFT } from "~/constants/addresses";
 import { tokenIdToCard } from "~/constants/cards";
 
 export const Cards: NextPage = () => {
-  const { data: fids } = useReadContract({
+  const { address } = useAccount();
+  const { data: fids, refetch } = useReadContract({
     address: BLACKJACK,
     abi,
     functionName: "getAllCardFids",
@@ -26,6 +30,12 @@ export const Cards: NextPage = () => {
   };
 
   const NftCard: FC<{ tokenId: string }> = ({ tokenId }) => {
+    const handleOnStatus = useCallback((status: LifeCycleStatus) => { 
+      console.log('LifecycleStatus', status); 
+      if (status.statusName === "success") {
+        void refetch();
+      }
+    }, []);
     const { data: ownerAddress } = useReadContract({
       address: CARD_NFT,
       abi: erc721Abi,
@@ -33,6 +43,8 @@ export const Cards: NextPage = () => {
       args: [BigInt(tokenId)],
     });
     const [fid, setFid] = useState<string | undefined>();
+    const [newFid, setNewFid] = useState<string>();
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
     useEffect(() => {
       const card = tokenIdToCard[tokenId];
@@ -47,7 +59,7 @@ export const Cards: NextPage = () => {
 
     if (!ownerAddress) return null;
     return (
-      <div className="flex max-w-xs items-center gap-2 w-full">
+      <div className="flex max-w-xs my-8 items-center gap-2 w-full">
         <Card
           value={tokenIdToCard[tokenId]?.value}
           suit={tokenIdToCard[tokenId]?.suit}
@@ -58,12 +70,32 @@ export const Cards: NextPage = () => {
             <Name address={ownerAddress} chain={base} />
           </div>
           <input
-            className="w-full input input-bordered"
+            className="w-full input input-sm input-bordered text-center"
             type="text"
-            value={fid}
-            onChange={(e) => setFid(e.target.value)}
-            readOnly
+            value={newFid}
+            placeholder={fid}
+            onChange={(e) => setNewFid(e.target.value)}
           />
+          {address && isAddressEqual(ownerAddress, address) && (
+            <Transaction
+              contracts={[{
+                address: BLACKJACK,
+                abi,
+                functionName: "updateCardFid",
+                args: [BigInt(tokenId), BigInt(newFid ?? 0)],
+              }]}
+              onStatus={handleOnStatus}
+              className="max-h-10"
+            >
+              <TransactionButton text="Update FID" />
+              <TransactionSponsor />
+              <TransactionToast>
+                <TransactionToastIcon />
+                <TransactionToastLabel />
+                <TransactionToastAction />
+              </TransactionToast>
+            </Transaction> 
+          )}
         </div>
       </div>
     );
