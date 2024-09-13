@@ -1,4 +1,4 @@
-import { type FC, useEffect, useMemo } from 'react';
+import { type FC, useEffect, useMemo, useState } from 'react';
 import { isAddressEqual, zeroAddress } from 'viem';
 import { useAccount, useReadContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
@@ -47,11 +47,22 @@ export const Blackjack: FC = () => {
     return () => clearInterval(interval);
   }, [refetch]);
 
+  const [showTip, setShowTip] = useState<boolean>(true);
+
   if (!data) return null;
   return (
     <div className="flex flex-col gap-2">
       <Watch onEvent={() => void refetch()} />
       <GrantPermissions />
+      {showTip && (
+        <div className="border rounded-lg sm:p-4 p-2 text-center relative">
+          <button
+            className="absolute top-0 right-2 p-2"
+            onClick={() => setShowTip(false)}
+          >&times;</button>
+          If 🔑 buttons stop working, try granting permissions again
+        </div>
+      )}
       {!userIsPlayingInGame && (
         <Bet onGameJoined={refetch} />
       )}
@@ -76,10 +87,11 @@ export const Blackjack: FC = () => {
           key={player} 
           numPlayers={data.playerAddresses.length}
           playerIndex={index} 
-          isCurrentPlayer={data.currentPlayerIndex}
+          currentPlayerIndex={data.currentPlayerIndex}
           isDealerHand={index === data.playerAddresses.length}
           dealerHandValues={data.dealerHandValues}
           dealerHandSuits={data.dealerHandSuits}
+          lastActionTimestamp={data.lastActionTimestamp}
         />
       ))}
     </div>

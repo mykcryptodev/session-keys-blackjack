@@ -2,30 +2,34 @@ import { Avatar, Name } from "@coinbase/onchainkit/identity";
 import Image from "next/image";
 import { type FC, useEffect, useState } from "react";
 import { type Hex, isAddressEqual, zeroAddress } from "viem";
-import { useReadContract } from "wagmi";
+import { useAccount, useReadContract } from "wagmi";
 import { base, baseSepolia } from "wagmi/chains";
 
+import Action from "~/components/Blackjack/Action";
 import Card from "~/components/Blackjack/Card";
 import { abi as blackjackAbi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
 
 type Props = {
   playerIndex: number;
-  isCurrentPlayer: number;
+  currentPlayerIndex: number;
   numPlayers: number;
   isDealerHand: boolean;
   dealerHandValues?: readonly number[];
   dealerHandSuits?: readonly number[];
+  lastActionTimestamp?: bigint;
 };
 
 export const Hand: FC<Props> = ({ 
   playerIndex,
-  isCurrentPlayer,
+  currentPlayerIndex,
   isDealerHand,
   dealerHandValues,
   dealerHandSuits,
   numPlayers,
+  lastActionTimestamp,
 }) => {
+  const { address } = useAccount();
   const [playerAddress, setPlayerAddress] = useState<Hex>();
   const [handValues, setHandValues] = useState<readonly number[]>([]);
   const [handSuits, setHandSuits] = useState<readonly number[]>([]);
@@ -54,7 +58,22 @@ export const Hand: FC<Props> = ({
     ],
   });
 
-  console.log({ handValue });
+  console.log({
+    dateNow: Date.now() / 1000,
+    lastActionTimestamp: lastActionTimestamp ? Number(lastActionTimestamp) : null,
+    diff: lastActionTimestamp ? (Date.now() / 1000 - Number(lastActionTimestamp)) : null,
+  })
+  const [lastActionWasTooLongAgo, setLastActionWasTooLongAgo] = useState<boolean>(false);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const wasTooLong = Boolean(lastActionTimestamp && (Date.now() / 1000 - Number(lastActionTimestamp)) > 60);
+      console.log({ wasTooLong });
+      if (wasTooLong) {
+        setLastActionWasTooLongAgo(true);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lastActionTimestamp]);
 
   useEffect(() => {
     if (!isDealerHand) {
@@ -87,7 +106,7 @@ export const Hand: FC<Props> = ({
           ) : (
             <Name address={playerAddress} chain={base}/>
           )}
-          {isCurrentPlayer === playerIndex && numPlayers > 0 && (
+          {currentPlayerIndex === playerIndex && numPlayers > 0 && (
             <div className="badge">Active</div>
           )}
           {handValue ? (
@@ -118,6 +137,29 @@ export const Hand: FC<Props> = ({
             />
           )}
         </div>
+        {!isDealerHand && currentPlayerIndex === playerIndex && address && isAddressEqual(playerAddress, address) && lastActionWasTooLongAgo && (
+          <div className="flex flex-col items-center p-4 sm:p-8 border rounded-lg">
+            <div className="flex flex-col text-center">
+              <div className="font-bold">Time is up</div>
+              <div className="text-sm">Other players can force you to stand! Hurry up!</div>
+            </div>
+          </div>
+        )}
+        {!isDealerHand && currentPlayerIndex === playerIndex && lastActionWasTooLongAgo && address && !isAddressEqual(playerAddress, address) && (
+          <div className="flex flex-col items-center p-4 sm:p-8 border rounded-lg">
+            <div className="flex flex-col text-center">
+              <div className="font-bold">Time is up!</div>
+              <div className="text-sm">You can force the player to stand to keep the game moving</div>
+            </div>
+            <Action
+              btnLabel="Force Stand"
+              loadingLabel="Forcing Stand"
+              functionName="forceStand"
+              args={[BigInt(playerIndex)]}
+              onActionSuccess={refetch}
+            />
+          </div>
+        )}
       </div>
     );
   }

@@ -43,7 +43,6 @@ export const Cards: NextPage = () => {
     });
     const [fid, setFid] = useState<string | undefined>();
     const [newFid, setNewFid] = useState<string>();
-    const [isUpdating, setIsUpdating] = useState<boolean>(false);
 
     useEffect(() => {
       // @ts-expect-error - TS doesn't like us
