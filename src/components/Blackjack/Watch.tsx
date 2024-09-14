@@ -66,7 +66,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
     poll: true,
     onLogs(logs) {
       console.log(logs);
-      void onEvent('PlayerAction');
+      void onEvent('GameEnded');
     },
   });
 

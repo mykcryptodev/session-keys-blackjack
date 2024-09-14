@@ -67,7 +67,6 @@ export const Hand: FC<Props> = ({
   useEffect(() => {
     const interval = setInterval(() => {
       const wasTooLong = Boolean(lastActionTimestamp && (Date.now() / 1000 - Number(lastActionTimestamp)) > 60);
-      console.log({ wasTooLong });
       if (wasTooLong) {
         setLastActionWasTooLongAgo(true);
       }

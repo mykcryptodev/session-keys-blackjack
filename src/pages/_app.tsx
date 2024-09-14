@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Head from 'next/head';
 import { type Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
+import { SnackbarProvider } from 'notistack';
 
 import Layout from '~/components/utils/Layout';
 import { APP_DESCRIPTION, APP_NAME, APP_URL } from "~/constants";
@@ -60,12 +61,14 @@ const MyApp: AppType<{ session: Session | null }> = ({
         />
       </Head>
       <SessionProvider session={session}>
-        <OnchainProviders>
-          <Layout>
-            <Component {...pageProps} />
-          </Layout>
-          <div id="portal" />
-        </OnchainProviders>
+        <SnackbarProvider>
+          <OnchainProviders>
+            <Layout>
+              <Component {...pageProps} />
+            </Layout>
+            <div id="portal" />
+          </OnchainProviders>
+        </SnackbarProvider>
       </SessionProvider>
     </>
   );

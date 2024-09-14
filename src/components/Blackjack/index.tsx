@@ -1,5 +1,6 @@
+import { useSnackbar } from 'notistack';
 import { type FC, useEffect, useMemo, useState } from 'react';
-import { isAddressEqual, zeroAddress } from 'viem';
+import { formatEther, isAddressEqual, zeroAddress } from 'viem';
 import { useAccount, useReadContract } from "wagmi";
 import { baseSepolia } from "wagmi/chains";
 
@@ -10,8 +11,10 @@ import { Watch } from "~/components/Blackjack/Watch";
 import { GrantPermissions } from "~/components/Wallet/GrantPermissions";
 import { abi } from "~/constants/abi/blackjack";
 import { BLACKJACK } from "~/constants/addresses";
+import calculateHandValue from "~/helpers/calculateHandValue";
 
 export const Blackjack: FC = () => {
+  const { enqueueSnackbar } = useSnackbar();
   const { address } = useAccount();
 
   const { 
@@ -38,6 +41,43 @@ export const Blackjack: FC = () => {
   const dealerIsCurrentPlayer = useMemo(() => {
     return data?.currentPlayerIndex === data?.playerAddresses.length;
   }, [data?.currentPlayerIndex, data?.playerAddresses]);
+
+  const userWinnings = useMemo(() => {
+    if (!data?.dealerHasPlayed || !address) return "0";
+    // check if the user has busted
+    const userPlayerIndex = data.playerAddresses.findIndex(playerAddress => isAddressEqual(playerAddress, address));
+    if (!data.playerHandValues[userPlayerIndex]) return "0";
+    
+    const userHandValue = calculateHandValue(data.playerHandValues[userPlayerIndex]);
+    if (userHandValue > 21) return "0";
+    
+    const winnings = data.playerAddresses.reduce((acc, playerAddress, index) => {
+      if (isAddressEqual(playerAddress, address)) {
+        return acc + data.playerBets[index]!;
+      }
+      return acc - data.playerBets[index]!;
+    }, BigInt(0));
+
+    // check if the dealer has busted
+    const dealerHandValue = calculateHandValue(data.dealerHandValues);
+    if (dealerHandValue > 21) return formatEther(winnings);
+
+    console.log({ userHandValue, dealerHandValue });
+    
+    // check if the user has a higher hand value
+    if (userHandValue > dealerHandValue) {
+      return formatEther(winnings);
+    };
+
+    return "0";
+  }, [address, data?.dealerHandValues, data?.dealerHasPlayed, data?.playerAddresses, data?.playerBets, data?.playerHandValues]);
+
+  useEffect(() => {
+    if (userWinnings !== "0") {
+      console.log("User is winner!");
+      enqueueSnackbar(`🎉 You won ${userWinnings} ETH!`, { variant: 'success' });
+    }
+  }, [enqueueSnackbar, userWinnings]);
 
   // every 5 seconds, refetch the game state
   useEffect(() => {
