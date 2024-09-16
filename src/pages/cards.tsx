@@ -87,7 +87,7 @@ export const Cards: NextPage = () => {
               onStatus={handleOnStatus}
               className="max-h-10"
             >
-              <TransactionButton text="Update FID" />
+              <TransactionButton text="Update FID" className="mt-0" />
               <TransactionSponsor />
               <TransactionToast>
                 <TransactionToastIcon />
