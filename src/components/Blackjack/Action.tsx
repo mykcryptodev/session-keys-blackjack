@@ -51,7 +51,7 @@ export const Action: FC<Props> = ({ btnLabel, loadingLabel, functionName, args, 
           }]}
           value={value}
           buttonText={`${btnLabel} 🔑`}
-          className="mt-4 w-1/2 text-base"
+          className="w-1/2 text-base"
           onSuccess={() => setIsLoading(true)}
         />
         <Transaction
@@ -65,7 +65,7 @@ export const Action: FC<Props> = ({ btnLabel, loadingLabel, functionName, args, 
           }]}
           onStatus={handleOnStatus}
         >
-          <TransactionButton text={`${btnLabel} ✍️`} />
+          <TransactionButton className="mt-0" text={`${btnLabel} ✍️`} />
           <TransactionSponsor />
           <TransactionToast>
             <TransactionToastIcon />
