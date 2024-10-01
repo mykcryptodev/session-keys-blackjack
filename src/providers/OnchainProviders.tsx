@@ -4,7 +4,6 @@ import {
   RainbowKitProvider,
 } from '@rainbow-me/rainbowkit';
 import {
-  coinbaseWallet,
   metaMaskWallet,
   rainbowWallet,
   walletConnectWallet,
@@ -12,7 +11,9 @@ import {
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Buffer } from "buffer";
 import { type FC, useEffect, useState } from 'react';
+import { createPublicClient } from 'viem';
 import { createConfig, http,WagmiProvider } from 'wagmi';
+import { coinbaseWallet } from 'wagmi/connectors';
 
 import { APP_NAME, DEFAULT_CHAIN, EAS_SCHEMA_ID, SUPPORTED_CHAINS } from '~/constants';
 import PermissionsProvider from '~/contexts/PermissionsContext';
@@ -27,10 +28,6 @@ const queryClient = new QueryClient();
  
 const connectors = connectorsForWallets( 
   [
-    {
-      groupName: 'Recommended Wallet',
-      wallets: [coinbaseWallet],
-    },
     {
       groupName: 'Other Wallets',
       wallets: [
@@ -54,10 +51,17 @@ const transports = SUPPORTED_CHAINS.reduce<Record<number, ReturnType<typeof http
 }, {});
 
 export const wagmiConfig = createConfig({
-  connectors,
+  connectors: [coinbaseWallet({
+    preference: 'smartWalletOnly',
+  }), ...connectors],
   chains: SUPPORTED_CHAINS,
   syncConnectedChain: true,
   transports,
+});
+
+export const publicClient = createPublicClient({
+  chain: DEFAULT_CHAIN,
+  transport: http(),
 });
 
 type Props = {

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { type FC, type ReactNode,useEffect, useState } from "react";
+import { useAccount } from "wagmi";
 
 import { Wallet } from "~/components/Wallet";
 import { APP_NAME } from "~/constants";
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export const Layout: FC<Props> = ({ children }) => {
+  const { isConnected } = useAccount();
   const [isMounted, setIsMounted] = useState<boolean>(false);
   useEffect(() => {
     setIsMounted(true);
@@ -27,10 +29,15 @@ export const Layout: FC<Props> = ({ children }) => {
             </h1>
           </Link>
           <div className="flex items-center gap-2">
-            <Link href="/cards" className="btn btn-ghost">
-              Customize Cards
-            </Link>
-            <Wallet withWalletAggregator />
+            {isConnected && (
+              <Link href="/cards" className="btn btn-ghost">
+                Customize Cards
+              </Link>
+            )}
+            {!isConnected && (
+              <Wallet withWalletAggregator btnLabel="EOA" />
+            )}
+            <Wallet btnLabel="SCW" />
           </div>
         </div>
       </div>

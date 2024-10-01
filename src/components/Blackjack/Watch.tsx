@@ -1,6 +1,7 @@
 import { watchContractEvent } from '@wagmi/core'
 import { type FC } from "react";
 
+import { DEFAULT_CHAIN } from '~/constants';
 import { abi } from '~/constants/abi/blackjack';
 import { BLACKJACK } from '~/constants/addresses';
 import { wagmiConfig } from '~/providers/OnchainProviders';
@@ -12,6 +13,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
     abi,
+    chainId: DEFAULT_CHAIN.id,
     eventName: "PlayerJoined",
     poll: true,
     onLogs(logs) {
@@ -21,6 +23,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
+    chainId: DEFAULT_CHAIN.id,
     abi,
     eventName: "GameStarted",
     poll: true,
@@ -31,6 +34,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
+    chainId: DEFAULT_CHAIN.id,
     abi,
     eventName: "CardsDealt",
     poll: true,
@@ -41,6 +45,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
+    chainId: DEFAULT_CHAIN.id,
     abi,
     eventName: "PlayerAction",
     poll: true,
@@ -51,6 +56,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
+    chainId: DEFAULT_CHAIN.id,
     abi,
     eventName: "DealerAction",
     poll: true,
@@ -61,6 +67,7 @@ export const Watch: FC<Props> = ({ onEvent }) => {
   });
   watchContractEvent(wagmiConfig, {
     address: BLACKJACK,
+    chainId: DEFAULT_CHAIN.id,
     abi,
     eventName: "GameEnded",
     poll: true,
