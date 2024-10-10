@@ -13,7 +13,7 @@ type Props = {
   onGameJoined?: () => void;
 }
 const MIN_BET = "0.0000001";
-const MAX_BET = "0.001";
+const MAX_BET = "0.1";
 
 export const Bet: FC<Props> = ({ onGameJoined }) => {
   const { writeContractAsync, isPending } = useWriteContract();
